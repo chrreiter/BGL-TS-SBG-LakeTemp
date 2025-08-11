@@ -30,9 +30,11 @@ from .const import (
     LakeSourceType,
     GkdBayernOptions,
     HydroOOEOptions,
+    SalzburgOGDOptions,
 )
 from .scrapers.gkd_bayern import GKDBayernScraper
 from .scrapers.hydro_ooe import HydroOOEScraper
+from .scrapers.salzburg_ogd import SalzburgOGDScraper
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -214,6 +216,15 @@ def create_data_source(
             period=period,
             name_hint=lake.name,
         )
+    if source_type is LakeSourceType.SALZBURG_OGD:
+        lake_name_opt: str | None = None
+        if isinstance(lake.source.options, SalzburgOGDOptions):
+            lake_name_opt = lake.source.options.lake_name
+        return _SalzburgOGDSourceAdapter(
+            lake_name=lake_name_opt or lake.name,
+            user_agent=lake.user_agent,
+            session=session,
+        )
 
     raise NotImplementedError(f"Unsupported source type: {source_type}")
 
@@ -292,3 +303,53 @@ def _extract_station_id_from_url(url: str) -> str:
     except Exception:
         pass
     raise ValueError("Unable to extract station_id from Hydro OOE URL")
+
+
+class _SalzburgOGDSourceAdapter(DataSourceInterface):
+    """Adapter to use SalzburgOGDScraper as a data source implementation.
+
+    Fetches the full OGD file and selects the newest measurement for a specific
+    lake name (case/diacritic-insensitive matching handled by the scraper).
+    """
+
+    def __init__(
+        self,
+        *,
+        lake_name: str,
+        user_agent: str,
+        session: Optional[aiohttp.ClientSession],
+        request_timeout_seconds: float = 20.0,
+        url: str = "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt",
+    ) -> None:
+        self._lake_name = lake_name
+        self._user_agent = user_agent
+        self._session = session
+        self._timeout = request_timeout_seconds
+        self._url = url
+
+    async def fetch_temperature(self) -> TemperatureReading:
+        if self._session is not None:
+            scraper = SalzburgOGDScraper(
+                url=self._url,
+                session=self._session,
+                user_agent=self._user_agent,
+                request_timeout_seconds=self._timeout,
+            )
+            latest = await scraper.fetch_latest_for_lake(self._lake_name)
+        else:
+            async with SalzburgOGDScraper(
+                url=self._url,
+                user_agent=self._user_agent,
+                request_timeout_seconds=self._timeout,
+            ) as scraper:
+                latest = await scraper.fetch_latest_for_lake(self._lake_name)
+
+        return TemperatureReading(
+            timestamp=latest.timestamp,
+            temperature_c=latest.temperature_c,
+            source=LakeSourceType.SALZBURG_OGD.value,
+        )
+
+    def get_update_frequency(self) -> timedelta:
+        # Source notes: updates every 2-3 hours; choose 2 hours conservatively
+        return timedelta(hours=2)

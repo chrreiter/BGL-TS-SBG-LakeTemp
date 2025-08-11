@@ -133,6 +133,52 @@ async def _fetch_hydro_ooe_latest(session: aiohttp.ClientSession) -> ProviderLiv
         )
 
 
+async def _fetch_salzburg_ogd_mattsee_latest(session: aiohttp.ClientSession) -> ProviderLiveReading:
+    """Fetch the latest water temperature for Mattsee from Salzburg OGD.
+
+    Uses the robust SalzburgOGDScraper to parse the semicolon text export.
+    """
+
+    _ensure_repo_on_sys_path()
+    _install_homeassistant_stubs()
+    from custom_components.bgl_ts_sbg_laketemp.scrapers.salzburg_ogd import SalzburgOGDScraper, NoDataError
+
+    def _norm(name: str) -> str:
+        import unicodedata, re
+        base = unicodedata.normalize("NFKD", name)
+        base = "".join(ch for ch in base if not unicodedata.combining(ch))
+        base = base.lower().strip()
+        base = base.replace("zeller see", "zellersee").replace("obertrumer see", "obertrumersee")
+        base = re.sub(r"\bsee\b", "", base)
+        base = re.sub(r"[^a-z0-9]+", "", base)
+        return base
+
+    try:
+        scraper = SalzburgOGDScraper(session=session)
+        try:
+            latest = await scraper.fetch_latest_for_lake("Mattsee")
+        except NoDataError:
+            # Fallback: scan all and pick the first lake whose normalized key contains 'matt'
+            mapping = await scraper.fetch_all_latest()
+            target_key = "matt"
+            latest = None
+            for rec in mapping.values():
+                if target_key in _norm(rec.lake_name):
+                    latest = rec
+                    break
+            if latest is None:
+                raise NoDataError("No temperature for Mattsee found in Salzburg OGD payload")
+        return ProviderLiveReading(
+            provider="salzburg_ogd_mattsee",
+            timestamp_iso=latest.timestamp.isoformat(),
+            temperature_c=latest.temperature_c,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return ProviderLiveReading(
+            provider="salzburg_ogd_mattsee", timestamp_iso=None, temperature_c=None, error=str(exc)
+        )
+
+
 async def _fetch_all_live_readings() -> List[ProviderLiveReading]:
     """Fetch latest readings for all implemented providers in parallel."""
 
@@ -142,6 +188,7 @@ async def _fetch_all_live_readings() -> List[ProviderLiveReading]:
         results = await asyncio.gather(
             _fetch_gkd_bayern_latest(session),
             _fetch_hydro_ooe_latest(session),
+            _fetch_salzburg_ogd_mattsee_latest(session),
             return_exceptions=False,
         )
     return list(results)

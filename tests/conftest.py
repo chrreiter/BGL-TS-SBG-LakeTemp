@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+import inspect
 import os
 import pytest
 
@@ -60,4 +61,28 @@ if "homeassistant" not in sys.modules:
 
     ha_core.HomeAssistant = HomeAssistant
     sys.modules["homeassistant.core"] = ha_core
+
+
+# ---- Minimal async test support without external pytest-asyncio plugin ----
+import asyncio  # noqa: E402
+
+
+def _run_coroutine(func, kwargs):  # type: ignore[no-untyped-def]
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(func(**kwargs))
+
+
+def pytest_pyfunc_call(pyfuncitem):  # type: ignore[no-untyped-def]
+    """Allow async def tests to run without pytest-asyncio.
+
+    If the test function is a coroutine function and no async plugin is active,
+    execute it in the current event loop.
+    """
+    test_func = pyfuncitem.obj
+    if inspect.iscoroutinefunction(test_func):
+        # Collect fixture-injected arguments
+        kwargs = {arg: pyfuncitem.funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}
+        _run_coroutine(test_func, kwargs)
+        return True
+    return None
 

@@ -79,6 +79,7 @@ class LakeSourceType(str, Enum):
     GKD_BAYERN = "gkd_bayern"
     GENERIC_HTML = "generic_html"
     HYDRO_OOE = "hydro_ooe"
+    SALZBURG_OGD = "salzburg_ogd"
 
 
 @dataclass(frozen=True)
@@ -108,11 +109,24 @@ class HydroOOEOptions:
 
 
 @dataclass(frozen=True)
+class SalzburgOGDOptions:
+    """Options specific to Salzburg OGD hydrology 'Seen' text source.
+
+    Attributes:
+        lake_name: Optional explicit lake name to match in the dataset. If not
+            provided, the integration will use the top-level ``name`` from the
+            lake configuration as the match key.
+    """
+
+    lake_name: str | None = None
+
+
+@dataclass(frozen=True)
 class SourceConfig:
     """Unified source configuration for a lake."""
 
     type: LakeSourceType
-    options: GkdBayernOptions | GenericHtmlOptions | HydroOOEOptions | None
+    options: GkdBayernOptions | GenericHtmlOptions | HydroOOEOptions | SalzburgOGDOptions | None
 
 
 @dataclass(frozen=True)
@@ -177,6 +191,10 @@ def _validate_source_block(value: MutableMapping[str, Any]) -> Dict[str, Any]:
         period = options_in.get("period")
         if period is not None and not isinstance(period, str):
             raise vol.Invalid("Invalid source.options.period: expected string like 'P7D'")
+    elif source_type is LakeSourceType.SALZBURG_OGD:
+        lake_name = options_in.get("lake_name")
+        if lake_name is not None and not isinstance(lake_name, str):
+            raise vol.Invalid("Invalid source.options.lake_name: expected string")
 
     return {CONF_SOURCE_TYPE: source_type.value, CONF_SOURCE_OPTIONS: options_in}
 
@@ -216,7 +234,7 @@ def build_lake_config(validated: Dict[str, Any]) -> LakeConfig:
     source_type = LakeSourceType(source_block.get(CONF_SOURCE_TYPE, DEFAULT_SOURCE_TYPE))
     options_dict = source_block.get(CONF_SOURCE_OPTIONS, {})
 
-    options: GkdBayernOptions | GenericHtmlOptions | None
+    options: GkdBayernOptions | GenericHtmlOptions | HydroOOEOptions | SalzburgOGDOptions | None
     if source_type is LakeSourceType.GKD_BAYERN:
         options = GkdBayernOptions(
             station_id=options_dict.get("station_id"),
@@ -233,6 +251,10 @@ def build_lake_config(validated: Dict[str, Any]) -> LakeConfig:
             api_base=options_dict.get("api_base"),
             parameter=options_dict.get("parameter"),
             period=options_dict.get("period"),
+        )
+    elif source_type is LakeSourceType.SALZBURG_OGD:
+        options = SalzburgOGDOptions(
+            lake_name=options_dict.get("lake_name"),
         )
     else:
         options = None

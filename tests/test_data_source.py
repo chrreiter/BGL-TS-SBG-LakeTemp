@@ -16,10 +16,14 @@ from custom_components.bgl_ts_sbg_laketemp.data_source import (
     create_data_source,
 )
 from custom_components.bgl_ts_sbg_laketemp.const import LAKE_SCHEMA, build_lake_config
+from custom_components.bgl_ts_sbg_laketemp.scrapers.salzburg_ogd import (
+    HttpError as SalzburgHttpError,
+)
 
 
 FIXTURE_PATH = pathlib.Path(__file__).parent / "fixtures" / "gkd_bayern_table_sample.html"
 ZRXP_URL = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+OGD_URL = "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt"
 
 
 # Test: GKDBayernSource returns latest temperature reading
@@ -116,3 +120,33 @@ async def test_factory_creates_hydro_ooe_source_and_fetches_latest() -> None:
     assert reading.timestamp.hour == 16
     assert reading.timestamp.tzinfo is not None
     assert reading.source == "hydro_ooe"
+
+
+# Test: Factory creates Salzburg OGD source and returns latest temperature
+# Expect: TemperatureReading with source 'salzburg_ogd'
+@pytest.mark.asyncio
+async def test_factory_creates_salzburg_ogd_source_and_fetches_latest() -> None:
+    raw = {
+        "name": "Fuschlsee",
+        "url": OGD_URL,
+        "entity_id": "fuschlsee",
+        "source": {"type": "salzburg_ogd", "options": {"lake_name": "Fuschlsee"}},
+    }
+    validated = LAKE_SCHEMA(raw)
+    lake_cfg = build_lake_config(validated)
+
+    payload = (
+        "Gewässer;Messdatum;Uhrzeit;Wassertemperatur [°C];Station\n"
+        "Fuschlsee;2025-08-08;13:00;22,0;Westufer\n"
+        "Fuschlsee;2025-08-08;14:00;22,4;Westufer\n"
+    )
+
+    with aioresponses() as mocked:
+        mocked.get(OGD_URL, status=200, body=payload)
+        source = create_data_source(lake_cfg)
+        reading = await source.fetch_temperature()
+
+    assert isinstance(reading, TemperatureReading)
+    assert reading.temperature_c == 22.4
+    assert reading.timestamp.hour == 14
+    assert reading.source == "salzburg_ogd"
