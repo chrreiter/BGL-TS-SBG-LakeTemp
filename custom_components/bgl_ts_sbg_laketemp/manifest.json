@@ -1,0 +1,18 @@
+{
+  "domain": "bgl_ts_sbg_laketemp",
+  "name": "BGL-TS-SBG-LakeTemp",
+  "documentation": "https://github.com/chrreiter/BGL-TS-SBG-LakeTemp",
+  "issue_tracker": "https://github.com/chrreiter/BGL-TS-SBG-LakeTemp/issues",
+  "codeowners": ["@chrreiter"],
+  "version": "0.1.0",
+  "iot_class": "cloud_polling",
+  "requirements": [
+    "beautifulsoup4==4.12.3",
+    "aiohttp>=3.9.1"
+  ],
+  "loggers": [
+    "custom_components.bgl_ts_sbg_laketemp"
+  ]
+}
+
+
