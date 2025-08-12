@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+import os
 import inspect
 import os
 import pytest
@@ -16,6 +17,12 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+
+# Ensure online tests run by default in environments (e.g., VS Code Test Explorer)
+# that may not propagate RUN_ONLINE via settings. Users can override by setting
+# RUN_ONLINE=0 in their environment or .env file.
+os.environ.setdefault("RUN_ONLINE", "1")
 
 
 @pytest.fixture(autouse=True)
