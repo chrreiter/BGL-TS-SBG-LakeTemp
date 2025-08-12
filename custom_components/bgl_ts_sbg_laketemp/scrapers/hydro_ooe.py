@@ -26,6 +26,7 @@ from aiohttp import ClientConnectorError, ClientResponseError
 import re
 
 from ..mixins import AsyncSessionMixin
+from ..logging_utils import kv, log_operation
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -145,32 +146,38 @@ class HydroOOEScraper(AsyncSessionMixin):
     async def _fetch_text(self, url: str) -> str:
         session = await self._ensure_session()
         try:
-            _LOGGER.debug("Fetching Hydro OOE ZRXP: %s", url)
-            async with session.get(url) as resp:
-                try:
-                    resp.raise_for_status()
-                except ClientResponseError as exc:
-                    raise HttpError(f"HTTP error {exc.status} for {url}") from exc
-                # Robust decoding: try server-declared/UTF-8 first, then latin-1 and cp1252 as fallbacks
-                raw = await resp.read()
-                encodings = []
-                if resp.charset:
-                    encodings.append(resp.charset)
-                encodings.extend(["utf-8", "latin-1", "cp1252"])
-                last_error: Exception | None = None
-                for enc in encodings:
+            async with log_operation(
+                _LOGGER,
+                component="scraper.hydro_ooe",
+                operation="http_get",
+                url=url,
+            ) as op:
+                async with session.get(url) as resp:
                     try:
-                        return raw.decode(enc)
-                    except Exception as dec_err:  # noqa: BLE001
-                        last_error = dec_err
-                        continue
-                # As a last resort, replace undecodable bytes
-                try:
-                    return raw.decode("utf-8", errors="replace")
-                except Exception as exc2:  # noqa: BLE001
-                    if last_error is not None:
-                        raise last_error
-                    raise exc2
+                        resp.raise_for_status()
+                    except ClientResponseError as exc:
+                        raise HttpError(f"HTTP error {exc.status} for {url}") from exc
+                    # Robust decoding: try server-declared/UTF-8 first, then latin-1 and cp1252 as fallbacks
+                    raw = await resp.read()
+                    op.set(status=resp.status, bytes=len(raw))
+                    encodings = []
+                    if resp.charset:
+                        encodings.append(resp.charset)
+                    encodings.extend(["utf-8", "latin-1", "cp1252"])
+                    last_error: Exception | None = None
+                    for enc in encodings:
+                        try:
+                            return raw.decode(enc)
+                        except Exception as dec_err:  # noqa: BLE001
+                            last_error = dec_err
+                            continue
+                    # As a last resort, replace undecodable bytes
+                    try:
+                        return raw.decode("utf-8", errors="replace")
+                    except Exception as exc2:  # noqa: BLE001
+                        if last_error is not None:
+                            raise last_error
+                        raise exc2
         except ClientConnectorError as exc:
             raise NetworkError(f"Network error while connecting to {url}") from exc
         except aiohttp.ServerTimeoutError as exc:
@@ -187,46 +194,54 @@ class HydroOOEScraper(AsyncSessionMixin):
         Blocks are delimited by occurrences of "#SANR". The very first part
         before the first station header is ignored.
         """
-
-        # Normalize newlines, but the file may be one long line
-        parts = text.split("#SANR")
-        blocks: list[str] = []
-        for part in parts[1:]:
-            blocks.append("#SANR" + part)
-        return blocks
+        with log_operation(_LOGGER, component="scraper.hydro_ooe", operation="split_blocks") as op:
+            # Normalize newlines, but the file may be one long line
+            parts = text.split("#SANR")
+            blocks: list[str] = []
+            for part in parts[1:]:
+                blocks.append("#SANR" + part)
+            op.set(blocks=len(blocks))
+            return blocks
 
     def _select_block(self, blocks: list[str]) -> Optional[str]:
         """Select the best matching block using configured identifiers."""
+        with log_operation(_LOGGER, component="scraper.hydro_ooe", operation="select_block") as op:
+            # Prepare candidates based on priority
+            sanr_target: Optional[str] = None
+            if self._sanr and self._sanr.isdigit():
+                sanr_target = self._sanr
+            elif self._station_id and str(self._station_id).isdigit():
+                sanr_target = str(self._station_id)
 
-        # Prepare candidates based on priority
-        sanr_target: Optional[str] = None
-        if self._sanr and self._sanr.isdigit():
-            sanr_target = self._sanr
-        elif self._station_id and str(self._station_id).isdigit():
-            sanr_target = str(self._station_id)
+            sname_target = self._sname_contains or self._name_hint
+            sname_target = sname_target.strip() if sname_target else None
 
-        sname_target = self._sname_contains or self._name_hint
-        sname_target = sname_target.strip() if sname_target else None
+            chosen: Optional[str] = None
+            for block in blocks:
+                # Extract SANR and SNAME
+                sanr_match = re.search(r"#SANR(\d+)", block)
+                sname_match = re.search(r"\|\*\|SNAME([^|]*)\|\*\|", block)
+                swater_match = re.search(r"\|\*\|SWATER([^|]*)\|\*\|", block)
+                sanr_val = sanr_match.group(1) if sanr_match else None
+                sname_val = sname_match.group(1).strip() if sname_match else None
+                swater_val = swater_match.group(1).strip() if swater_match else None
 
-        chosen: Optional[str] = None
-        for block in blocks:
-            # Extract SANR and SNAME
-            sanr_match = re.search(r"#SANR(\d+)", block)
-            sname_match = re.search(r"\|\*\|SNAME([^|]*)\|\*\|", block)
-            swater_match = re.search(r"\|\*\|SWATER([^|]*)\|\*\|", block)
-            sanr_val = sanr_match.group(1) if sanr_match else None
-            sname_val = sname_match.group(1).strip() if sname_match else None
-            swater_val = swater_match.group(1).strip() if swater_match else None
-
-            if sanr_target and sanr_val == sanr_target:
-                return block
-            if sname_target:
-                cand_fields = [s for s in [sname_val, swater_val] if s]
-                if any(sname_target.lower() in f.lower() for f in cand_fields):
-                    # Keep first match if no SANR found
-                    if chosen is None:
-                        chosen = block
-        return chosen
+                if sanr_target and sanr_val == sanr_target:
+                    op.set(match_type="sanr", sanr=sanr_target)
+                    return block
+                if sname_target:
+                    cand_fields = [s for s in [sname_val, swater_val] if s]
+                    if any(sname_target.lower() in f.lower() for f in cand_fields):
+                        # Keep first match if no SANR found
+                        if chosen is None:
+                            chosen = block
+            if sname_target and chosen is not None:
+                op.set(match_type="sname_contains", query=sname_target)
+            elif sanr_target:
+                op.set(match_type="sanr_not_found", sanr=sanr_target)
+            else:
+                op.set(match_type="none")
+            return chosen
 
     def _parse_zrxp_block(self, block: str) -> list[HydroOOERecord]:
         """Parse a single station block into records.
@@ -235,58 +250,62 @@ class HydroOOEScraper(AsyncSessionMixin):
         followed by pairs of "YYYYMMDDhhmmss value".
         """
 
-        # Extract timezone offset like #TZUTC+1 or #TZUTC-2
-        tz_match = re.search(r"#TZUTC([+-])(\d+)", block)
-        tzinfo = timezone.utc
-        if tz_match:
-            sign = 1 if tz_match.group(1) == "+" else -1
-            hours = int(tz_match.group(2))
-            tzinfo = timezone(timedelta(hours=sign * hours))
+        with log_operation(_LOGGER, component="scraper.hydro_ooe", operation="parse_block") as op:
+            # Extract timezone offset like #TZUTC+1 or #TZUTC-2
+            tz_match = re.search(r"#TZUTC([+-])(\d+)", block)
+            tzinfo = timezone.utc
+            if tz_match:
+                sign = 1 if tz_match.group(1) == "+" else -1
+                hours = int(tz_match.group(2))
+                tzinfo = timezone(timedelta(hours=sign * hours))
 
-        # Extract invalid sentinel if present (e.g., RINVAL-777)
-        rinval_match = re.search(r"RINVAL\s*([+-]?\d+(?:[.,]\d+)?)", block)
-        rinval_val: Optional[float] = None
-        if rinval_match:
-            rinval_text = rinval_match.group(1).replace(",", ".")
-            try:
-                rinval_val = float(rinval_text)
-            except Exception:  # noqa: BLE001
-                rinval_val = None
+            # Extract invalid sentinel if present (e.g., RINVAL-777)
+            rinval_match = re.search(r"RINVAL\s*([+-]?\d+(?:[.,]\d+)?)", block)
+            rinval_val: Optional[float] = None
+            if rinval_match:
+                rinval_text = rinval_match.group(1).replace(",", ".")
+                try:
+                    rinval_val = float(rinval_text)
+                except Exception:  # noqa: BLE001
+                    rinval_val = None
 
-        # Find the layout marker; everything after contains timestamp/value pairs
-        layout_pos = block.find("#LAYOUT(timestamp,value)")
-        if layout_pos == -1:
-            raise ParseError("Missing #LAYOUT(timestamp,value) in ZRXP block")
+            # Find the layout marker; everything after contains timestamp/value pairs
+            layout_pos = block.find("#LAYOUT(timestamp,value)")
+            if layout_pos == -1:
+                raise ParseError("Missing #LAYOUT(timestamp,value) in ZRXP block")
 
-        # After the marker, there is a delimiter "|*|" and then the data
-        data_start = block.find("|*|", layout_pos)
-        if data_start == -1:
-            raise ParseError("Malformed ZRXP block: missing data delimiter after LAYOUT")
-        series_text = block[data_start + 3 :]
+            # After the marker, there is a delimiter "|*|" and then the data
+            data_start = block.find("|*|", layout_pos)
+            if data_start == -1:
+                raise ParseError("Malformed ZRXP block: missing data delimiter after LAYOUT")
+            series_text = block[data_start + 3 :]
 
-        # Extract all timestamp/value pairs
-        pair_re = re.compile(r"(\d{14})\s+([+-]?\d+(?:[.,]\d+)?)")
-        records: list[HydroOOERecord] = []
-        for m in pair_re.finditer(series_text):
-            ts_raw = m.group(1)
-            val_raw = m.group(2)
-            try:
-                ts = datetime.strptime(ts_raw, "%Y%m%d%H%M%S").replace(tzinfo=tzinfo)
-                temp_text = val_raw.replace(",", ".")
-                temp = float(temp_text)
-            except Exception:  # noqa: BLE001
-                continue
+            # Extract all timestamp/value pairs
+            pair_re = re.compile(r"(\d{14})\s+([+-]?\d+(?:[.,]\d+)?)")
+            records: list[HydroOOERecord] = []
+            rows_seen = 0
+            for m in pair_re.finditer(series_text):
+                rows_seen += 1
+                ts_raw = m.group(1)
+                val_raw = m.group(2)
+                try:
+                    ts = datetime.strptime(ts_raw, "%Y%m%d%H%M%S").replace(tzinfo=tzinfo)
+                    temp_text = val_raw.replace(",", ".")
+                    temp = float(temp_text)
+                except Exception:  # noqa: BLE001
+                    continue
 
-            # Skip invalid sentinel and out-of-range values
-            if rinval_val is not None and abs(temp - rinval_val) < 1e-9:
-                continue
-            if temp < -5.0 or temp > 45.0:
-                continue
-            records.append(HydroOOERecord(timestamp=ts, temperature_c=temp))
+                # Skip invalid sentinel and out-of-range values
+                if rinval_val is not None and abs(temp - rinval_val) < 1e-9:
+                    continue
+                if temp < -5.0 or temp > 45.0:
+                    continue
+                records.append(HydroOOERecord(timestamp=ts, temperature_c=temp))
 
-        if not records:
-            raise NoDataError("No usable data points in ZRXP block")
-        return records
+            op.set(rows_seen=rows_seen, records=len(records))
+            if not records:
+                raise NoDataError("No usable data points in ZRXP block")
+            return records
 
     # Note: Legacy timestamp parsing helpers removed. ZRXP path handles parsing internally.
 

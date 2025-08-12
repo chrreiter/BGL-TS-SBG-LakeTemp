@@ -1,0 +1,10 @@
+{
+  "name": "BGL-TS-SBG-LakeTemp",
+  "country": ["DE"],
+  "render_readme": true,
+  "zip_release": false,
+  "filename": "",
+  "homeassistant": "2024.1.0"
+}
+
+ 

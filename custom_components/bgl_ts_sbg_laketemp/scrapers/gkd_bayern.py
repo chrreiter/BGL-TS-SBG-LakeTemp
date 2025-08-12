@@ -28,6 +28,7 @@ from bs4 import BeautifulSoup
 
 from ..const import DEFAULT_USER_AGENT
 from ..mixins import AsyncSessionMixin
+from ..logging_utils import kv, log_operation
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -180,7 +181,10 @@ class GKDBayernScraper(AsyncSessionMixin):
 
         if not url.rstrip("/").endswith("tabelle"):
             alt_url = url.rstrip("/") + "/tabelle"
-            _LOGGER.debug("Primary page lacked table. Trying fallback URL: %s", alt_url)
+            _LOGGER.debug(
+                "%s",
+                kv(component="scraper.gkd_bayern", operation="fallback", reason="no_table", alt_url=alt_url),
+            )
             html_alt = await self._fetch_html(alt_url)
             if self._contains_measurement_table(html_alt):
                 return html_alt
@@ -191,16 +195,21 @@ class GKDBayernScraper(AsyncSessionMixin):
     async def _fetch_html(self, url: str) -> str:
         session = await self._ensure_session()
         try:
-            _LOGGER.debug("Fetching GKD Bayern HTML: %s", url)
-            async with session.get(url) as resp:
-                # Raise for non-2xx
-                try:
-                    resp.raise_for_status()
-                except ClientResponseError as exc:  # noqa: PERF203 - explicit branch fine here
-                    raise HttpError(f"HTTP error {exc.status} for {url}") from exc
-                text = await resp.text()
-                _LOGGER.debug("Fetched %d bytes from %s", len(text), url)
-                return text
+            async with log_operation(
+                _LOGGER,
+                component="scraper.gkd_bayern",
+                operation="http_get",
+                url=url,
+            ) as op:
+                async with session.get(url) as resp:
+                    # Raise for non-2xx
+                    try:
+                        resp.raise_for_status()
+                    except ClientResponseError as exc:  # noqa: PERF203 - explicit branch fine here
+                        raise HttpError(f"HTTP error {exc.status} for {url}") from exc
+                    text = await resp.text()
+                    op.set(status=resp.status, bytes=len(text))
+                    return text
         except ClientConnectorError as exc:
             raise NetworkError(f"Network error while connecting to {url}") from exc
         except aiohttp.ServerTimeoutError as exc:
@@ -229,58 +238,77 @@ class GKDBayernScraper(AsyncSessionMixin):
         Raises ParseError or NoDataError when structure is unexpected or empty.
         """
 
-        soup = BeautifulSoup(html, "html.parser")
+        with log_operation(_LOGGER, component="scraper.gkd_bayern", operation="parse_table") as op:
+            soup = BeautifulSoup(html, "html.parser")
 
-        candidate_tables: list = []
-        if soup and soup.body:
-            if tables := soup.select("table"):
-                candidate_tables = list(tables)
+            candidate_tables: list = []
+            if soup and soup.body:
+                if tables := soup.select("table"):
+                    candidate_tables = list(tables)
 
-        if not candidate_tables:
-            raise ParseError("No <table> elements found in page")
+            if not candidate_tables:
+                raise ParseError("No <table> elements found in page")
 
-        # Prefer a table with appropriate headers; otherwise, fallback to the first table
-        chosen_table = None
-        for table in candidate_tables:
-            header_texts = GKDBayernScraper._extract_header_texts(table)
-            if GKDBayernScraper._header_looks_like_measurement(header_texts):
-                chosen_table = table
-                break
-        if chosen_table is None:
-            chosen_table = candidate_tables[0]
-            _LOGGER.debug("Falling back to first table; headers did not match expected pattern")
+            # Prefer a table with appropriate headers; otherwise, fallback to the first table
+            chosen_table = None
+            for table in candidate_tables:
+                header_texts = GKDBayernScraper._extract_header_texts(table)
+                if GKDBayernScraper._header_looks_like_measurement(header_texts):
+                    chosen_table = table
+                    break
+            if chosen_table is None:
+                chosen_table = candidate_tables[0]
+                _LOGGER.debug(
+                    "%s",
+                    kv(
+                        component="scraper.gkd_bayern",
+                        operation="parse_table",
+                        note="fallback_first_table",
+                    ),
+                )
 
-        # Extract rows
-        body = chosen_table.find("tbody") or chosen_table
-        rows = body.find_all("tr") if body else []
-        records: list[GKDBayernRecord] = []
+            # Extract rows
+            body = chosen_table.find("tbody") or chosen_table
+            rows = body.find_all("tr") if body else []
+            records: list[GKDBayernRecord] = []
 
-        for row in rows:
-            cells = row.find_all(["td", "th"])  # Some tables may not use <th> exclusively for headers
-            if len(cells) < 2:
-                continue
-            date_text = GKDBayernScraper._clean_text(cells[0].get_text(" "))
-            temp_text = GKDBayernScraper._clean_text(cells[1].get_text(" "))
+            for row in rows:
+                cells = row.find_all(["td", "th"])  # Some tables may not use <th> exclusively for headers
+                if len(cells) < 2:
+                    continue
+                date_text = GKDBayernScraper._clean_text(cells[0].get_text(" "))
+                temp_text = GKDBayernScraper._clean_text(cells[1].get_text(" "))
 
-            # Ignore rows that are obviously non-data (e.g., links or empty second column)
-            if not date_text or not temp_text or temp_text == "-":
-                continue
+                # Ignore rows that are obviously non-data (e.g., links or empty second column)
+                if not date_text or not temp_text or temp_text == "-":
+                    continue
 
-            # Parse timestamp and temperature
-            try:
-                ts = GKDBayernScraper._parse_german_datetime(date_text)
-                temp_c = GKDBayernScraper._parse_temperature_c(temp_text)
-            except ValueError:
-                # Skip unparseable rows, but keep parsing subsequent rows
-                _LOGGER.debug("Skipping unparsable row: date=%r temp=%r", date_text, temp_text)
-                continue
+                # Parse timestamp and temperature
+                try:
+                    ts = GKDBayernScraper._parse_german_datetime(date_text)
+                    temp_c = GKDBayernScraper._parse_temperature_c(temp_text)
+                except ValueError:
+                    # Skip unparseable rows, but keep parsing subsequent rows
+                    _LOGGER.debug(
+                        "%s",
+                        kv(
+                            component="scraper.gkd_bayern",
+                            operation="parse_row_skip",
+                            reason="unparsable",
+                            date=date_text,
+                            temp=temp_text,
+                        ),
+                    )
+                    continue
 
-            records.append(GKDBayernRecord(timestamp=ts, temperature_c=temp_c))
+                records.append(GKDBayernRecord(timestamp=ts, temperature_c=temp_c))
 
-        if not records:
-            raise NoDataError("No measurement rows parsed from table")
+            op.set(tables=len(candidate_tables), rows=len(rows), records=len(records))
 
-        return records
+            if not records:
+                raise NoDataError("No measurement rows parsed from table")
+
+            return records
 
     # ----- Helpers -----
 

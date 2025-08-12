@@ -33,6 +33,7 @@ import aiohttp
 from aiohttp import ClientConnectorError, ClientResponseError
 
 from ..mixins import AsyncSessionMixin
+from ..logging_utils import kv, log_operation
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -186,54 +187,64 @@ class SalzburgOGDScraper(AsyncSessionMixin):
 
     async def _download_and_parse(self) -> List[SalzburgOGDRecord]:
         text = await self._fetch_text(self._url)
-        try:
-            headers, rows = self._split_header_rows(text)
-            column_map = self._detect_columns(headers)
-        except Exception as exc:  # noqa: BLE001
-            raise ParseError(f"Failed to detect header/columns: {exc}") from exc
-
-        results: List[SalzburgOGDRecord] = []
-        for raw in rows:
+        with log_operation(_LOGGER, component="scraper.salzburg_ogd", operation="parse_payload") as op:
             try:
-                rec = self._parse_row(raw, column_map)
-            except ValueError:
-                # Skip unparsable rows
-                continue
-            if rec is not None:
-                results.append(rec)
+                headers, rows = self._split_header_rows(text)
+                column_map = self._detect_columns(headers)
+            except Exception as exc:  # noqa: BLE001
+                raise ParseError(f"Failed to detect header/columns: {exc}") from exc
 
-        if not results:
-            raise NoDataError("No measurement rows parsed from payload")
-        return results
+            results: List[SalzburgOGDRecord] = []
+            rows_seen = 0
+            for raw in rows:
+                rows_seen += 1
+                try:
+                    rec = self._parse_row(raw, column_map)
+                except ValueError:
+                    # Skip unparsable rows
+                    continue
+                if rec is not None:
+                    results.append(rec)
+
+            op.set(rows_seen=rows_seen, records=len(results))
+            if not results:
+                raise NoDataError("No measurement rows parsed from payload")
+            return results
 
     async def _fetch_text(self, url: str) -> str:
         session = await self._ensure_session()
         try:
-            _LOGGER.debug("Fetching Salzburg OGD text: %s", url)
-            async with session.get(url) as resp:
-                try:
-                    resp.raise_for_status()
-                except ClientResponseError as exc:
-                    raise HttpError(f"HTTP error {exc.status} for {url}") from exc
-                raw = await resp.read()
-                # try declared, then utf-8, latin-1, cp1252; finally replace errors
-                candidates: List[str] = []
-                if resp.charset:
-                    candidates.append(resp.charset)
-                candidates.extend(["utf-8", "latin-1", "cp1252"])
-                last_error: Exception | None = None
-                for enc in candidates:
+            async with log_operation(
+                _LOGGER,
+                component="scraper.salzburg_ogd",
+                operation="http_get",
+                url=url,
+            ) as op:
+                async with session.get(url) as resp:
                     try:
-                        return raw.decode(enc)
-                    except Exception as dec_err:  # noqa: BLE001
-                        last_error = dec_err
-                        continue
-                try:
-                    return raw.decode("utf-8", errors="replace")
-                except Exception as exc2:  # noqa: BLE001
-                    if last_error is not None:
-                        raise last_error
-                    raise exc2
+                        resp.raise_for_status()
+                    except ClientResponseError as exc:
+                        raise HttpError(f"HTTP error {exc.status} for {url}") from exc
+                    raw = await resp.read()
+                    op.set(status=resp.status, bytes=len(raw))
+                    # try declared, then utf-8, latin-1, cp1252; finally replace errors
+                    candidates: List[str] = []
+                    if resp.charset:
+                        candidates.append(resp.charset)
+                    candidates.extend(["utf-8", "latin-1", "cp1252"])
+                    last_error: Exception | None = None
+                    for enc in candidates:
+                        try:
+                            return raw.decode(enc)
+                        except Exception as dec_err:  # noqa: BLE001
+                            last_error = dec_err
+                            continue
+                    try:
+                        return raw.decode("utf-8", errors="replace")
+                    except Exception as exc2:  # noqa: BLE001
+                        if last_error is not None:
+                            raise last_error
+                        raise exc2
         except ClientConnectorError as exc:
             raise NetworkError(f"Network error while connecting to {url}") from exc
         except aiohttp.ServerTimeoutError as exc:
