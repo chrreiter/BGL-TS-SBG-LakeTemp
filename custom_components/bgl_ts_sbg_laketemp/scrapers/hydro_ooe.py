@@ -25,6 +25,8 @@ import aiohttp
 from aiohttp import ClientConnectorError, ClientResponseError
 import re
 
+from ..mixins import AsyncSessionMixin
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +59,7 @@ class HydroOOERecord:
     temperature_c: float
 
 
-class HydroOOEScraper:
+class HydroOOEScraper(AsyncSessionMixin):
     """Async scraper for Hydro OOE water temperatures via ZRXP bulk export.
 
     Selection heuristics:
@@ -82,32 +84,18 @@ class HydroOOEScraper:
         self._sanr = str(sanr) if sanr is not None else None
         self._sname_contains = sname_contains
         self._name_hint = name_hint
-        self._session_external = session
-        self._session_owned: aiohttp.ClientSession | None = None
         self._timeout = request_timeout_seconds
         self._user_agent = user_agent or (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
         )
+        super().__init__(
+            session=session,
+            user_agent=self._user_agent,
+            request_timeout_seconds=request_timeout_seconds,
+            default_headers={"Accept": "text/plain, */*"},
+        )
 
-    async def __aenter__(self) -> "HydroOOEScraper":
-        await self._ensure_session()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
-        await self.close()
-
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        if self._session_external is not None:
-            return self._session_external
-        if self._session_owned is None or self._session_owned.closed:
-            headers = {"User-Agent": self._user_agent, "Accept": "text/plain, */*"}
-            timeout = aiohttp.ClientTimeout(total=self._timeout)
-            self._session_owned = aiohttp.ClientSession(headers=headers, timeout=timeout)
-        return self._session_owned
-
-    async def close(self) -> None:
-        if self._session_owned is not None and not self._session_owned.closed:
-            await self._session_owned.close()
+    # Session management provided by AsyncSessionMixin
 
     async def fetch_latest(self) -> HydroOOERecord:
         records = await self.fetch_records()

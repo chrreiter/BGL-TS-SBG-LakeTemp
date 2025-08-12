@@ -27,6 +27,7 @@ from aiohttp import ClientConnectorError, ClientResponseError
 from bs4 import BeautifulSoup
 
 from ..const import DEFAULT_USER_AGENT
+from ..mixins import AsyncSessionMixin
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -77,7 +78,7 @@ class GKDBayernRecord:
 # ---------- Scraper Implementation ----------
 
 
-class GKDBayernScraper:
+class GKDBayernScraper(AsyncSessionMixin):
     """Async scraper for GKD Bayern lake temperatures.
 
     Example usage:
@@ -119,32 +120,16 @@ class GKDBayernScraper:
         self._user_agent = user_agent
         self._timeout = request_timeout_seconds
         self._table_selector = table_selector
-        self._session_external = session
-        self._session_owned: aiohttp.ClientSession | None = None
+        super().__init__(
+            session=session,
+            user_agent=user_agent,
+            request_timeout_seconds=request_timeout_seconds,
+            default_headers={"Accept": "text/html,application/xhtml+xml"},
+        )
 
     # ----- Session management -----
 
-    async def __aenter__(self) -> "GKDBayernScraper":
-        await self._ensure_session()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
-        await self.close()
-
-    async def _ensure_session(self) -> aiohttp.ClientSession:
-        if self._session_external is not None:
-            return self._session_external
-        if self._session_owned is None or self._session_owned.closed:
-            _LOGGER.debug("Creating internal aiohttp session for GKD Bayern scraper")
-            headers = {"User-Agent": self._user_agent, "Accept": "text/html,application/xhtml+xml"}
-            timeout = aiohttp.ClientTimeout(total=self._timeout)
-            self._session_owned = aiohttp.ClientSession(headers=headers, timeout=timeout)
-        return self._session_owned
-
-    async def close(self) -> None:
-        """Close the owned session if we created one."""
-        if self._session_owned is not None and not self._session_owned.closed:
-            await self._session_owned.close()
+    # Session management now provided by AsyncSessionMixin
 
     # ----- Public API -----
 
