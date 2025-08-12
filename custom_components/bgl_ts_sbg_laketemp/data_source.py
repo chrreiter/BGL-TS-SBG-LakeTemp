@@ -56,6 +56,24 @@ class TemperatureReading:
     temperature_c: float
     source: str
 
+    def __post_init__(self) -> None:
+        """Validate and normalize the ``source`` identifier.
+
+        Ensures the ``source`` field corresponds to a supported ``LakeSourceType``
+        value. Accepts either the enum value string or a ``LakeSourceType``
+        instance, normalizing the latter to its ``.value``.
+        """
+        # Normalize if caller passed an enum instance despite the type hint
+        if isinstance(self.source, LakeSourceType):
+            object.__setattr__(self, "source", self.source.value)
+            return
+
+        # Validate provided string maps to a known LakeSourceType
+        try:
+            LakeSourceType(str(self.source))
+        except Exception as exc:  # noqa: BLE001 - surface a clearer error
+            raise ValueError(f"Invalid source identifier for TemperatureReading: {self.source!r}") from exc
+
 
 class DataSourceInterface(abc.ABC):
     """Abstract base class for temperature data sources.
@@ -285,7 +303,7 @@ class _HydroOOESourceAdapter(DataSourceInterface):
         return TemperatureReading(
             timestamp=latest.timestamp,
             temperature_c=latest.temperature_c,
-            source="hydro_ooe",
+            source=LakeSourceType.HYDRO_OOE.value,
         )
 
     def get_update_frequency(self) -> timedelta:
