@@ -19,7 +19,7 @@ We keep the same exception types as the GKD scraper for consistency.
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 import logging
-from typing import Any, Iterable, List, Optional
+from typing import Optional
 
 import aiohttp
 from aiohttp import ClientConnectorError, ClientResponseError
@@ -288,13 +288,7 @@ class HydroOOEScraper(AsyncSessionMixin):
             raise NoDataError("No usable data points in ZRXP block")
         return records
 
-    @staticmethod
-    def _parse_timestamp(text: str) -> datetime:
-        # Retained for backward compatibility if ever re-used; not used in ZRXP path
-        if text.endswith("Z"):
-            base = datetime.fromisoformat(text[:-1])
-            return base.replace(tzinfo=timezone.utc)
-        return datetime.fromisoformat(text)
+    # Note: Legacy timestamp parsing helpers removed. ZRXP path handles parsing internally.
 
 
 __all__ = [

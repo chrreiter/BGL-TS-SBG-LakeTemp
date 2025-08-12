@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import abc
 import logging
+import re
+from urllib.parse import urlparse
 from typing import Protocol, runtime_checkable, Optional
 
 import aiohttp
@@ -191,7 +193,7 @@ def create_data_source(
             session=session,
         )
     if source_type is LakeSourceType.HYDRO_OOE:
-        # Prefer explicit station_id from options; otherwise derive from URL when possible.
+        # Prefer explicit station_id from options; otherwise rely on name-based selection.
         station_id: str | None = None
         api_base: str | None = None
         parameter: str | None = None
@@ -202,11 +204,10 @@ def create_data_source(
             parameter = lake.source.options.parameter
             period = lake.source.options.period
         else:
-            # Best-effort extraction; may not match SANR used in ZRXP. Scraper also uses name hint.
-            try:
-                station_id = _extract_station_id_from_url(lake.url)
-            except Exception:
-                station_id = None
+            _LOGGER.debug(
+                "No explicit Hydro OOE station_id provided; relying on name-based selection: %s",
+                lake.name,
+            )
         return _HydroOOESourceAdapter(
             station_id=station_id,
             user_agent=lake.user_agent,
@@ -292,17 +293,130 @@ class _HydroOOESourceAdapter(DataSourceInterface):
 
 
 def _extract_station_id_from_url(url: str) -> str:
-    # Hydro OOE SPA URLs often contain a segment like "/station/<id>/".
-    # We parse the path and return the last purely numeric token as a heuristic.
-    try:
-        path = url.split("?")[0]
-        tokens = [t for t in path.split("/") if t]
-        numeric = [t for t in tokens if t.isdigit()]
-        if numeric:
-            return numeric[-1]
-    except Exception:
-        pass
-    raise ValueError("Unable to extract station_id from Hydro OOE URL")
+    """Extract a Hydro OOE station id (SANR) from a variety of URL formats.
+
+    Supported patterns include (in either path or hash fragment):
+    - ``.../station/<id>/...``
+    - ``.../sanr/<id>/...``
+    - ``.../id/<id>/...``
+    - ``...?sanr=<id>`` (also inside the fragment query part)
+    - ``...?station=<id>`` or ``...?id=<id>``
+    - fallback: a unique 3-8 digit token anywhere in the path/fragment
+
+    Args:
+        url: The Hydro OOE URL as configured by the user.
+
+    Returns:
+        The extracted station id as a string.
+
+    Raises:
+        ValueError: If the URL is invalid for Hydro OOE or no station id can be
+            confidently extracted.
+    """
+
+    if not isinstance(url, str) or not url:
+        raise ValueError("URL must be a non-empty string for Hydro OOE station extraction")
+
+    parsed = urlparse(url)
+    lowered_netloc = (parsed.netloc or "").lower()
+    # Validate known domain for Hydro OOE; we only attempt strong parsing in this case.
+    if "hydro.ooe.gv.at" not in lowered_netloc:
+        raise ValueError(
+            f"Unrecognized domain for Hydro OOE URL: '{parsed.netloc}'. Expected 'hydro.ooe.gv.at'"
+        )
+
+    # Build a unified search string from fragment and path to catch SPA formats.
+    # Fragment usually contains the SPA router path (e.g., '#/overview/.../station/16579/...').
+    fragment = parsed.fragment or ""
+    path = parsed.path or ""
+    search_spaces = [fragment, path, url]
+
+    # First, try explicit and reliable patterns.
+    reliable_patterns: list[str] = [
+        r"(?:^|[/#?&])station/(\d{3,8})(?=[/#?&]|$)",
+        r"(?:^|[/#?&])sanr/(\d{3,8})(?=[/#?&]|$)",
+        r"(?:^|[/#?&])id/(\d{3,8})(?=[/#?&]|$)",
+        r"[?&#](?:sanr|station|id)=(\d{3,8})(?=[&#]|$)",
+        r"station[-_](\d{3,8})(?=[/#?&]|$)",
+    ]
+
+    for space in search_spaces:
+        for pat in reliable_patterns:
+            m = re.search(pat, space, re.IGNORECASE)
+            if m:
+                station_id = m.group(1)
+                _LOGGER.debug("Extracted Hydro OOE station id via pattern %r: %s", pat, station_id)
+                return station_id
+
+    # Fallback: collect all standalone 3-8 digit tokens within path/fragment.
+    candidates: set[str] = set()
+    token_re = re.compile(r"(?<!\d)(\d{3,8})(?!\d)")
+    for space in (fragment, path):
+        for m in token_re.finditer(space):
+            candidates.add(m.group(1))
+
+    if len(candidates) == 1:
+        only = next(iter(candidates))
+        _LOGGER.debug("Falling back to unique numeric token for Hydro OOE station id: %s", only)
+        return only
+
+    hint = "; found none" if not candidates else f"; ambiguous candidates={sorted(candidates)}"
+    raise ValueError(f"Unable to extract Hydro OOE station id from URL{hint}: {url}")
+
+
+def _extract_gkd_station_id_from_url(url: str) -> str:
+    """Extract the numeric station id from a GKD Bayern lake URL.
+
+    Typical formats:
+    - https://www.gkd.bayern.de/de/seen/wassertemperatur/<region>/<slug>-<id>/messwerte
+    - https://www.gkd.bayern.de/de/seen/wassertemperatur/<region>/<slug>-<id>/messwerte/tabelle
+
+    Args:
+        url: GKD Bayern URL for a lake measurement page.
+
+    Returns:
+        The extracted numeric station id as a string.
+
+    Raises:
+        ValueError: If the URL is not a GKD Bayern URL or no id can be extracted.
+    """
+
+    if not isinstance(url, str) or not url:
+        raise ValueError("URL must be a non-empty string for GKD station extraction")
+
+    parsed = urlparse(url)
+    netloc = (parsed.netloc or "").lower()
+    if "gkd.bayern.de" not in netloc:
+        raise ValueError(f"Unrecognized domain for GKD Bayern URL: '{parsed.netloc}'")
+
+    path = parsed.path or ""
+    # Ensure this looks like a seen/wassertemperatur path
+    if "/seen/wassertemperatur/" not in path:
+        raise ValueError("URL does not look like a GKD 'seen/wassertemperatur' path")
+
+    # Extract id from the station slug token, which typically ends with '-<digits>'
+    tokens = [t for t in path.split("/") if t]
+    id_match: str | None = None
+    for token in tokens:
+        # Only consider tokens that reasonably could be the station slug
+        # e.g., 'seethal-18673955', 'koenigssee-18624806'
+        m = re.search(r"-(\d{5,10})$", token)
+        if m:
+            id_match = m.group(1)
+            break
+
+    if id_match:
+        _LOGGER.debug("Extracted GKD station id from URL: %s", id_match)
+        return id_match
+
+    # Fallback: search anywhere in the path for '-<digits>' pattern
+    m2 = re.search(r"-(\d{5,10})(?=/|$)", path)
+    if m2:
+        station_id = m2.group(1)
+        _LOGGER.debug("Extracted GKD station id via fallback: %s", station_id)
+        return station_id
+
+    raise ValueError(f"Unable to extract GKD station id from URL: {url}")
 
 
 class _SalzburgOGDSourceAdapter(DataSourceInterface):
