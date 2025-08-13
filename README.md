@@ -52,3 +52,37 @@ Notes for online runs
 - You can combine with the clean plugin run if needed:
   - PowerShell: `$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD='1'; $env:RUN_ONLINE='1'; pytest -q -m online`
 - Online tests live in `tests/test_gkd_bayern_online.py` and `tests/test_hydro_ooe_online.py`.
+
+### Example YAML configuration
+
+Place in your Home Assistant `configuration.yaml` (or include from a separate file):
+
+```yaml
+bgl_ts_sbg_laketemp:
+  lakes:
+    - name: Seethal / Abtsdorfer See
+      url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte
+      entity_id: seethal_abtsdorfer
+      scan_interval: 1800
+      timeout_hours: 24
+      source:
+        type: gkd_bayern
+        options:
+          table_selector: null
+
+    - name: Irrsee / Zell am Moos
+      url: https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7D
+      entity_id: irrsee_zell
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "16579"
+
+    - name: Fuschlsee
+      url: https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt
+      entity_id: fuschlsee
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Fuschlsee
+```

@@ -59,6 +59,12 @@ if "homeassistant" not in sys.modules:
         SENSOR = "sensor"
 
     ha_const.Platform = Platform
+    # Common constants used by sensor platform
+    ha_const.ATTR_ATTRIBUTION = "attribution"
+    class UnitOfTemperature:
+        CELSIUS = "°C"
+
+    ha_const.UnitOfTemperature = UnitOfTemperature
     sys.modules["homeassistant.const"] = ha_const
 
     ha_core = types.ModuleType("homeassistant.core")
@@ -68,6 +74,100 @@ if "homeassistant" not in sys.modules:
 
     ha_core.HomeAssistant = HomeAssistant
     sys.modules["homeassistant.core"] = ha_core
+
+    # Components: sensor
+    ha_components = types.ModuleType("homeassistant.components")
+    sys.modules["homeassistant.components"] = ha_components
+
+    ha_components_sensor = types.ModuleType("homeassistant.components.sensor")
+
+    class SensorDeviceClass:
+        TEMPERATURE = "temperature"
+
+    class SensorEntity:
+        # Minimal base to satisfy attribute assignments
+        _attr_name = None
+        _attr_unique_id = None
+        _attr_device_class = None
+        _attr_native_unit_of_measurement = None
+        _attr_should_poll = False
+        _attr_device_info = None
+
+        @property
+        def name(self):  # noqa: D401 - test stub
+            return getattr(self, "_attr_name", None)
+
+        @property
+        def unique_id(self):  # noqa: D401 - test stub
+            return getattr(self, "_attr_unique_id", None)
+
+    ha_components_sensor.SensorEntity = SensorEntity
+    ha_components_sensor.SensorDeviceClass = SensorDeviceClass
+    sys.modules["homeassistant.components.sensor"] = ha_components_sensor
+
+    # helpers.entity
+    ha_helpers = types.ModuleType("homeassistant.helpers")
+    sys.modules["homeassistant.helpers"] = ha_helpers
+
+    ha_helpers_entity = types.ModuleType("homeassistant.helpers.entity")
+
+    class DeviceInfo(dict):
+        def __init__(self, **kwargs):  # noqa: D401 - test stub
+            super().__init__(**kwargs)
+
+    ha_helpers_entity.DeviceInfo = DeviceInfo
+    sys.modules["homeassistant.helpers.entity"] = ha_helpers_entity
+
+    # helpers.update_coordinator
+    ha_helpers_ucoord = types.ModuleType("homeassistant.helpers.update_coordinator")
+    import logging as _logging  # local import inside stub
+    from datetime import timedelta as _timedelta
+
+    class UpdateFailed(Exception):
+        pass
+
+    class DataUpdateCoordinator:
+        def __init__(self, hass, logger, *, name, update_method, update_interval: _timedelta):  # noqa: D401 - test stub
+            self.hass = hass
+            self.logger = logger or _logging.getLogger(__name__)
+            self.name = name
+            self.update_method = update_method
+            self.update_interval = update_interval
+            self.data = None
+            self.last_update_success = False
+
+        async def async_config_entry_first_refresh(self):  # noqa: D401 - test stub
+            try:
+                self.data = await self.update_method()
+                self.last_update_success = True
+            except Exception as exc:  # noqa: BLE001 - test stub behavior
+                self.last_update_success = False
+                self.data = None
+                # Log update failure to help tests assert logging
+                self.logger.error("Coordinator '%s' initial refresh failed: %s", self.name, exc)
+
+        # Allow generic subscripting syntax used by integration (DataUpdateCoordinator[...])
+        @classmethod
+        def __class_getitem__(cls, item):  # type: ignore[no-untyped-def]
+            return cls
+
+    class CoordinatorEntity:
+        def __init__(self, coordinator):  # noqa: D401 - test stub
+            self.coordinator = coordinator
+
+        @property
+        def available(self):  # noqa: D401 - test stub
+            return bool(getattr(self.coordinator, "last_update_success", False))
+
+        # Allow generic subscripting syntax used by integration (CoordinatorEntity[...])
+        @classmethod
+        def __class_getitem__(cls, item):  # type: ignore[no-untyped-def]
+            return cls
+
+    ha_helpers_ucoord.DataUpdateCoordinator = DataUpdateCoordinator
+    ha_helpers_ucoord.CoordinatorEntity = CoordinatorEntity
+    ha_helpers_ucoord.UpdateFailed = UpdateFailed
+    sys.modules["homeassistant.helpers.update_coordinator"] = ha_helpers_ucoord
 
 
 # ---- Minimal async test support without external pytest-asyncio plugin ----

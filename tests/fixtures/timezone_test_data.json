@@ -1,0 +1,39 @@
+{
+  "gkd_german_datetimes": [
+    { "text": "31.03.2024 03:30", "expected_offset_minutes": 120 },
+    { "text": "27.10.2024 03:30", "expected_offset_minutes": 60 },
+    { "text": "08.08.2025 14:00", "expected_offset_minutes": 120 }
+  ],
+  "ogd_iso_inputs": [
+    { "text": "2025-08-08T14:00Z", "expected_offset_minutes": 0 },
+    { "text": "2025-08-08T14:00+0100", "expected_offset_minutes": 60 },
+    { "text": "2025-08-08T14:00+05:30", "expected_offset_minutes": 330 },
+    { "text": "2025.08.12T23:00:00+0100 MEZ", "expected_offset_minutes": 60 }
+  ],
+  "ogd_locale_inputs": [
+    { "text": "08.08.2025 14:00", "expected_offset_minutes": 120 },
+    { "text": "08.08.25 14:00", "expected_offset_minutes": 120 },
+    { "text": "2025.08.11 13:46", "expected_offset_minutes": 120 },
+    { "text": "2025-08-08 14:00", "expected_offset_minutes": 120 },
+    { "text": "2025-08-08T14:00 MESZ", "expected_offset_minutes": 120 }
+  ],
+  "ogd_invalid_inputs": [
+    "not-a-date",
+    "2025-08-08T14:00+25:00",
+    ""
+  ],
+  "parts_cases": [
+    { "date": "08.08.2025", "time": "14:00", "expected_hour": 14, "expected_offset_minutes": 120 },
+    { "date": "08.08.2025", "time": "", "expected_hour": 12, "expected_offset_minutes": 120 },
+    { "date": "08.08.25", "time": "14:00:15", "expected_hour": 14, "expected_second": 15, "expected_offset_minutes": 120 }
+  ],
+  "hydro_tz_cases": [
+    { "tz_header": "#TZUTC+1", "ts": "20250808160000", "val": "23.1", "expected_offset_minutes": 60 },
+    { "tz_header": "#TZUTC-2", "ts": "20250808160000", "val": "23.1", "expected_offset_minutes": -120 },
+    { "tz_header": "#TZUTC+1", "ts": "20250808204500", "val": "22.1", "expected_offset_minutes": 60 }
+  ],
+  "cross_equivalences": [
+    { "berlin_text": "08.08.2025 14:00", "ogd_text": "2025-08-08T12:00:00Z" }
+  ]
+}
+

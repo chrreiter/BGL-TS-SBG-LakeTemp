@@ -11,11 +11,14 @@ import logging
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
+from .const import DOMAIN, CONFIG_SCHEMA as _INTEGRATION_CONFIG_SCHEMA, CONF_LAKES
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: Final[list[Platform]] = [Platform.SENSOR]
+
+"""Expose the integration's YAML config schema to Home Assistant."""
+CONFIG_SCHEMA = _INTEGRATION_CONFIG_SCHEMA
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -24,6 +27,22 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
         _LOGGER.debug("Created domain storage at hass.data[%s]", DOMAIN)
+
+    # Forward YAML-based sensor definitions to the sensor platform via discovery
+    domain_cfg = config.get(DOMAIN)
+    if isinstance(domain_cfg, dict) and domain_cfg.get(CONF_LAKES):
+        try:
+            # Import lazily to avoid requiring Home Assistant during unit tests
+            from homeassistant.helpers.discovery import async_load_platform  # type: ignore
+
+            discovery_info = {CONF_LAKES: domain_cfg.get(CONF_LAKES)}
+            hass.async_create_task(
+                async_load_platform(hass, Platform.SENSOR, DOMAIN, discovery_info, config)
+            )
+            _LOGGER.debug("Forwarded %d lake(s) to sensor platform", len(discovery_info[CONF_LAKES]))
+        except Exception as exc:  # noqa: BLE001 - log and continue
+            _LOGGER.error("Failed to forward configuration to sensor platform: %s", exc, exc_info=True)
+
     return True
 
 

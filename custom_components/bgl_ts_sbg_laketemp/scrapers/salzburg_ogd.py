@@ -461,12 +461,16 @@ class SalzburgOGDScraper(AsyncSessionMixin):
             dt = datetime.fromisoformat(t_norm)
             if dt.tzinfo is not None:
                 return dt
+            # Locale-like ISO without explicit tz: assume Vienna
+            return dt.replace(tzinfo=VIENNA_TZ)
         except Exception:  # noqa: BLE001
             pass
 
         candidates = [
             "%d.%m.%Y %H:%M:%S",
             "%d.%m.%Y %H:%M",
+            "%Y.%m.%d %H:%M:%S",
+            "%Y.%m.%d %H:%M",
             "%Y-%m-%d %H:%M:%S",
             "%Y-%m-%d %H:%M",
             "%Y-%m-%dT%H:%M:%S",
@@ -474,7 +478,7 @@ class SalzburgOGDScraper(AsyncSessionMixin):
         ]
         for fmt in candidates:
             try:
-                dt = datetime.strptime(t, fmt)
+                dt = datetime.strptime(t_norm, fmt)
                 return dt.replace(tzinfo=VIENNA_TZ)
             except Exception:  # noqa: BLE001
                 continue
