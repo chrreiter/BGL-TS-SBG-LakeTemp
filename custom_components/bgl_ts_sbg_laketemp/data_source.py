@@ -213,14 +213,8 @@ def create_data_source(
     if source_type is LakeSourceType.HYDRO_OOE:
         # Prefer explicit station_id from options; otherwise rely on name-based selection.
         station_id: str | None = None
-        api_base: str | None = None
-        parameter: str | None = None
-        period: str | None = None
         if isinstance(lake.source.options, HydroOOEOptions) and lake.source.options.station_id:
             station_id = str(lake.source.options.station_id)
-            api_base = lake.source.options.api_base
-            parameter = lake.source.options.parameter
-            period = lake.source.options.period
         else:
             _LOGGER.debug(
                 "No explicit Hydro OOE station_id provided; relying on name-based selection: %s",
@@ -230,9 +224,6 @@ def create_data_source(
             station_id=station_id,
             user_agent=lake.user_agent,
             session=session,
-            api_base=api_base,
-            parameter=parameter,
-            period=period,
             name_hint=lake.name,
         )
     if source_type is LakeSourceType.SALZBURG_OGD:

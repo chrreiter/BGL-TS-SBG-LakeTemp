@@ -160,8 +160,8 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
             session=session,
         )
 
-        # Perform initial refresh so state appears promptly
-        await coordinator.async_config_entry_first_refresh()
+        # Perform initial refresh so state appears promptly (YAML/discovery context)
+        await coordinator.async_refresh()
         return sensor
 
     @property

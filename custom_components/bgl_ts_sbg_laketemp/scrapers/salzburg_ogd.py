@@ -296,19 +296,21 @@ class SalzburgOGDScraper(AsyncSessionMixin):
 
         tokens = [self._normalize_header_token(h) for h in headers]
 
-        name_idx = self._find_first(
-            tokens,
-            [
-                r"gewassername",
-                r"gewasser bezeichnung",
-                r"gewasser",
-                r"gewsser",
+        # Prefer the actual lake/"Gewässername" over station/site names
+        name_idx = self._find_first(tokens, [
+            r"gewassername",
+            r"gewasser bezeichnung",
+            r"gewasser",
+            r"gewsser",
+            r"see",
+        ])
+        if name_idx is None:
+            # Fallback to broader name-like columns
+            name_idx = self._find_first(tokens, [
                 r"stationsname",
-                r"see",
                 r"bezeichnung",
                 r"\bname\b",
-            ],
-        )
+            ])
 
         temp_idx = self._find_first(
             tokens,
@@ -384,6 +386,8 @@ class SalzburgOGDScraper(AsyncSessionMixin):
             return None
 
         name = row[column_map["name"]].strip()
+        # Clean lake name artifacts like parenthetical station details
+        name = re.sub(r"\s*\([^)]*\)$", "", name).strip()
         if not name:
             return None
 

@@ -1,0 +1,46 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+logger:
+  default: info
+  logs:
+    homeassistant.components.cloud: debug
+    custom_components.bgl_ts_sbg_laketemp: debug
+
+bgl_ts_sbg_laketemp:
+  lakes:
+    - name: Seethal / Abtsdorfer See
+      url: "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+      entity_id: seethal_abtsdorfer
+      scan_interval: 1800
+      timeout_hours: 24
+      source:
+        type: gkd_bayern
+        options:
+          table_selector: null
+
+    - name: Irrsee / Zell am Moos
+      url: "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+      entity_id: irrsee_zell
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5005"  # SANR for Irrsee (Zell am Moos)
+
+    - name: Fuschlsee
+      url: "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt"
+      entity_id: fuschlsee
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Fuschlsee
+
+

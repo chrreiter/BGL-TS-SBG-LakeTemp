@@ -204,7 +204,15 @@ class HydroOOEScraper(AsyncSessionMixin):
             return blocks
 
     def _select_block(self, blocks: list[str]) -> Optional[str]:
-        """Select the best matching block using configured identifiers."""
+        """Select the best matching block using configured identifiers.
+
+        Matching strategy:
+        - Exact SANR match if provided
+        - Otherwise, try flexible substring matching against ``SNAME`` and ``SWATER``
+          fields. The ``sname_target`` is split into tokens on common delimiters so
+          names like "Irrsee / Zell am Moos" can match either "Irrsee" (SWATER)
+          or "Zell am Moos" (SNAME).
+        """
         with log_operation(_LOGGER, component="scraper.hydro_ooe", operation="select_block") as op:
             # Prepare candidates based on priority
             sanr_target: Optional[str] = None
@@ -215,8 +223,15 @@ class HydroOOEScraper(AsyncSessionMixin):
 
             sname_target = self._sname_contains or self._name_hint
             sname_target = sname_target.strip() if sname_target else None
+            sname_tokens: list[str] = []
+            if sname_target:
+                # Split on common separators and keep meaningful tokens (>=3 chars)
+                sname_tokens = [
+                    t.strip() for t in re.split(r"[\s/,;|()-]+", sname_target) if len(t.strip()) >= 3
+                ]
 
             chosen: Optional[str] = None
+            best_score: int = -1
             for block in blocks:
                 # Extract SANR and SNAME
                 sanr_match = re.search(r"#SANR(\d+)", block)
@@ -229,11 +244,30 @@ class HydroOOEScraper(AsyncSessionMixin):
                 if sanr_target and sanr_val == sanr_target:
                     op.set(match_type="sanr", sanr=sanr_target)
                     return block
+                if sname_tokens:
+                    cand_fields = [s for s in [sname_val, swater_val] if s]
+                    cand_lower = [c.lower() for c in cand_fields]
+                    # Token-based scoring: count matches across fields
+                    score = 0
+                    for tok in sname_tokens:
+                        tl = tok.lower()
+                        if any(tl in c for c in cand_lower):
+                            score += 1
+                    # Bonus if 'irrsee' appears explicitly in SWATER
+                    if swater_val and "irrsee" in swater_val.lower():
+                        score += 2
+                    # Bonus if both 'irrsee' and 'zell' appear across fields
+                    cl_join = " ".join(cand_lower)
+                    if ("irrsee" in cl_join) and ("zell" in cl_join):
+                        score += 1
+                    if score > best_score:
+                        best_score = score
+                        chosen = block
                 if sname_target:
                     cand_fields = [s for s in [sname_val, swater_val] if s]
                     if any(sname_target.lower() in f.lower() for f in cand_fields):
-                        # Keep first match if no SANR found
-                        if chosen is None:
+                        # Consider this as a minimal score match if nothing better exists
+                        if best_score < 0:
                             chosen = block
             if sname_target and chosen is not None:
                 op.set(match_type="sname_contains", query=sname_target)
