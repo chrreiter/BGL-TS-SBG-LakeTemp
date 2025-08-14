@@ -26,4 +26,62 @@ bgl_ts_sbg_laketemp:
         options:
           lake_name: Fuschlsee
 
+    - name: Königssee
+      url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/koenigssee-18624806/messwerte
+      entity_id: koenigssee
+      source:
+        type: gkd_bayern
+        options:
+          table_selector: null
+
+    - name: Waginger See
+      url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/buchwinkel-18682507/messwerte
+      entity_id: waginger_see
+      source:
+        type: gkd_bayern
+        options:
+          table_selector: null
+
+    - name: Mondsee
+      url: https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/5020/Mondsee/Wassertemperatur?period=P7D
+      entity_id: mondsee
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5020"
+
+    - name: Wolfgangsee
+      url: https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt
+      entity_id: wolfgangsee
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Wolfgangsee
+
+    - name: Attersee
+      url: https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/5290/Kammer/Wassertemperatur?period=P7D
+      entity_id: attersee
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5290"
+
+    - name: Traunsee
+      url: https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/4590/Gmunden%20(Esplanade)/Wassertemperatur?period=P7D
+      entity_id: traunsee
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4590"
+
+    - name: Mattsee
+      url: https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt
+      entity_id: mattsee
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Mattsee
+
+    
+
 
