@@ -5,6 +5,7 @@ from __future__ import annotations
 __all__ = [
     "gkd_bayern",
     "hydro_ooe",
+    "salzburg_ogd",
 ]
 
 
