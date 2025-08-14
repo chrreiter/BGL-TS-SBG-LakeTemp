@@ -12,6 +12,7 @@ import aiohttp
 from homeassistant.components.sensor import (
     SensorEntity,
     SensorDeviceClass,
+    SensorStateClass,
 )
 from homeassistant.const import ATTR_ATTRIBUTION, UnitOfTemperature
 from homeassistant.core import HomeAssistant
@@ -96,6 +97,7 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
     _attr_should_poll = False
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(
         self,

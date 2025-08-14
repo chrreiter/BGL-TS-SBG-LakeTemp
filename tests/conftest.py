@@ -78,6 +78,9 @@ if "homeassistant" not in sys.modules:
     class SensorDeviceClass:
         TEMPERATURE = "temperature"
 
+    class SensorStateClass:
+        MEASUREMENT = "measurement"
+
     class SensorEntity:
         # Minimal base to satisfy attribute assignments
         _attr_name = None
@@ -86,6 +89,7 @@ if "homeassistant" not in sys.modules:
         _attr_native_unit_of_measurement = None
         _attr_should_poll = False
         _attr_device_info = None
+        _attr_state_class = None
 
         @property
         def name(self):  # noqa: D401 - test stub
@@ -97,6 +101,7 @@ if "homeassistant" not in sys.modules:
 
     ha_components_sensor.SensorEntity = SensorEntity
     ha_components_sensor.SensorDeviceClass = SensorDeviceClass
+    ha_components_sensor.SensorStateClass = SensorStateClass
     sys.modules["homeassistant.components.sensor"] = ha_components_sensor
 
     # helpers.entity
