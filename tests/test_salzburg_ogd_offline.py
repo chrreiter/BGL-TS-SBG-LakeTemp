@@ -19,6 +19,8 @@ from custom_components.bgl_ts_sbg_laketemp.scrapers.salzburg_ogd import (
     ParseError,
     NoDataError,
 )
+from custom_components.bgl_ts_sbg_laketemp.const import LAKE_SCHEMA, build_lake_config
+from custom_components.bgl_ts_sbg_laketemp.data_source import create_data_source, TemperatureReading
 
 
 OGD_URL = "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt"
@@ -97,4 +99,34 @@ async def test_salzburg_ogd_no_matching_lake() -> None:
             with pytest.raises(NoDataError):
                 await scraper.fetch_latest_for_lake("NonExistingLake")
 
+
+# Test: Adapter honors custom lake.url for Salzburg OGD
+# Expect: When only the custom URL is mocked, fetching returns latest reading (22.4°C at 14:00)
+@pytest.mark.asyncio
+async def test_salzburg_ogd_adapter_prefers_configured_url() -> None:
+    custom_url = "https://example.test/ogd/Seen.txt"
+    raw = {
+        "name": "Fuschlsee",
+        "url": custom_url,
+        "entity_id": "fuschlsee_custom_url",
+        "source": {"type": "salzburg_ogd", "options": {"lake_name": "Fuschlsee"}},
+    }
+    validated = LAKE_SCHEMA(raw)
+    lake_cfg = build_lake_config(validated)
+
+    payload = (
+        "Gewässer;Messdatum;Uhrzeit;Wassertemperatur [°C];Station\n"
+        "Fuschlsee;2025-08-08;13:00;22,0;Westufer\n"
+        "Fuschlsee;2025-08-08;14:00;22,4;Westufer\n"
+    )
+
+    with aioresponses() as mocked:
+        mocked.get(custom_url, status=200, body=payload)
+        source = create_data_source(lake_cfg)
+        reading = await source.fetch_temperature()
+
+    assert isinstance(reading, TemperatureReading)
+    assert reading.temperature_c == 22.4
+    assert reading.timestamp.hour == 14
+    assert reading.source == "salzburg_ogd"
 

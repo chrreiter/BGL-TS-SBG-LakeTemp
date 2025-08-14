@@ -234,6 +234,7 @@ def create_data_source(
             lake_name=lake_name_opt or lake.name,
             user_agent=lake.user_agent,
             session=session,
+            url=lake.url,
         )
 
     raise NotImplementedError(f"Unsupported source type: {source_type}")
