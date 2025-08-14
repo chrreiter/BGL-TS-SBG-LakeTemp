@@ -2,7 +2,6 @@ from __future__ import annotations
 
 """Sensor platform scaffold for the BGL-TS-SBG-LakeTemp integration."""
 
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import logging
 from typing import Any, Dict, List, Optional
@@ -78,15 +77,6 @@ async def async_setup_platform(hass: HomeAssistant, config: dict, async_add_enti
     else:
         _LOGGER.warning("No valid lake configurations; no sensors created")
 
-
-@dataclass
-class _EntityState:
-    """Internal state cache for derived attributes."""
-
-    last_reading: Optional[TemperatureReading] = None
-    last_success_utc: Optional[datetime] = None
-
-
 class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], SensorEntity):
     """Sensor representing the latest water temperature for a configured lake.
 
@@ -113,7 +103,6 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
         self._lake = lake_config
         self._data_source = data_source
         self._session = session
-        self._state = _EntityState()
 
         # Core attributes
         self._attr_name = self._lake.name
