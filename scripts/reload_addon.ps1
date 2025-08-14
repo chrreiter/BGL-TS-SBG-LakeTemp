@@ -61,6 +61,20 @@ try {
         } else {
             Write-Err "Dev config not found: $devConfig (skipping config copy)"
         }
+    } else {
+        # When not using dev config, deploy the examples/configuration.yaml
+        $examplesConfig = Join-Path $repoRoot 'examples\configuration.yaml'
+        if (Test-Path -Path $examplesConfig -PathType Leaf) {
+            $remoteCfgDir = '/workspaces/home-assistant_core/config'
+            $remoteCfg    = "$remoteCfgDir/configuration.yaml"
+            Write-Info "Backing up existing configuration.yaml inside container (if present)..."
+            docker exec $ContainerName sh -lc "mkdir -p '$remoteCfgDir'; if [ -f '$remoteCfg' ]; then cp -f '$remoteCfg' '$remoteCfg.bak'; fi" | Out-Null
+
+            Write-Info "Deploying examples/configuration.yaml to configuration.yaml..."
+            docker cp $examplesConfig "$ContainerName`:$remoteCfgDir/configuration.yaml" | Out-Null
+        } else {
+            Write-Err "Examples config not found: $examplesConfig (skipping config copy)"
+        }
     }
 
     Write-Info "Restarting container '$ContainerName'..."
