@@ -103,9 +103,6 @@ class HydroOOEOptions:
     """Options specific to Hydro OOE source."""
 
     station_id: str | None = None
-    api_base: str | None = None
-    parameter: str | None = None  # e.g., "temperature" or localized key
-    period: str | None = None  # ISO8601 duration like P7D
 
 
 @dataclass(frozen=True)
@@ -182,15 +179,6 @@ def _validate_source_block(value: MutableMapping[str, Any]) -> Dict[str, Any]:
         station_id = options_in.get("station_id")
         if station_id is not None and not isinstance(station_id, (str, int)):
             raise vol.Invalid("Invalid source.options.station_id: expected string or int")
-        api_base = options_in.get("api_base")
-        if api_base is not None and not isinstance(api_base, str):
-            raise vol.Invalid("Invalid source.options.api_base: expected string URL")
-        parameter = options_in.get("parameter")
-        if parameter is not None and not isinstance(parameter, str):
-            raise vol.Invalid("Invalid source.options.parameter: expected string")
-        period = options_in.get("period")
-        if period is not None and not isinstance(period, str):
-            raise vol.Invalid("Invalid source.options.period: expected string like 'P7D'")
     elif source_type is LakeSourceType.SALZBURG_OGD:
         lake_name = options_in.get("lake_name")
         if lake_name is not None and not isinstance(lake_name, str):
@@ -248,9 +236,6 @@ def build_lake_config(validated: Dict[str, Any]) -> LakeConfig:
     elif source_type is LakeSourceType.HYDRO_OOE:
         options = HydroOOEOptions(
             station_id=str(options_dict.get("station_id")) if options_dict.get("station_id") is not None else None,
-            api_base=options_dict.get("api_base"),
-            parameter=options_dict.get("parameter"),
-            period=options_dict.get("period"),
         )
     elif source_type is LakeSourceType.SALZBURG_OGD:
         options = SalzburgOGDOptions(

@@ -259,18 +259,12 @@ class _HydroOOESourceAdapter(DataSourceInterface):
         user_agent: str,
         session: Optional[aiohttp.ClientSession],
         request_timeout_seconds: float = 15.0,
-        api_base: str | None = None,
-        parameter: str | None = None,
-        period: str | None = None,
         name_hint: str | None = None,
     ) -> None:
         self._station_id = station_id
         self._user_agent = user_agent
         self._session = session
         self._timeout = request_timeout_seconds
-        self._api_base = api_base
-        self._parameter = parameter or "temperature"
-        self._period = period or "P7D"
         self._name_hint = name_hint
 
     async def fetch_temperature(self) -> TemperatureReading:
