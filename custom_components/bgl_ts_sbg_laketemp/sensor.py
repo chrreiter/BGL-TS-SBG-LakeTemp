@@ -69,10 +69,20 @@ async def async_setup_platform(hass: HomeAssistant, config: dict, async_add_enti
             _LOGGER.error("Invalid lake configuration at index %s: %s", idx, exc, exc_info=True)
             continue
 
-        sensor = await LakeTemperatureSensor.create(hass=hass, lake_config=lake_cfg)
-        entities.append(sensor)
+        try:
+            sensor = await LakeTemperatureSensor.create(hass=hass, lake_config=lake_cfg)
+            entities.append(sensor)
+        except Exception as exc:  # noqa: BLE001 - resilient per-lake setup
+            _LOGGER.error(
+                "Failed to create sensor for lake '%s': %s",
+                raw.get(CONF_NAME, f"#{idx}"),
+                exc,
+                exc_info=True,
+            )
+            continue
 
     if entities:
+        _LOGGER.info("Creating %d lake temperature sensor(s)", len(entities))
         async_add_entities(entities)
     else:
         _LOGGER.warning("No valid lake configurations; no sensors created")
@@ -151,8 +161,7 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
             session=session,
         )
 
-        # Perform initial refresh using HA's dedicated API to align logs/patterns
-        await coordinator.async_config_entry_first_refresh()
+        # Do not block platform setup on initial network I/O; request refresh later
         return sensor
 
     @property
@@ -206,5 +215,13 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
         finally:
             if not self._session.closed:
                 await self._session.close()
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        # Perform an immediate initial refresh so state is available promptly
+        try:
+            await self.coordinator.async_refresh()
+        except Exception:  # noqa: BLE001 - best-effort; errors will reflect in availability
+            return
 
 

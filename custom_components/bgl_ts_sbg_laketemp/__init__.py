@@ -39,7 +39,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             hass.async_create_task(
                 async_load_platform(hass, Platform.SENSOR, DOMAIN, discovery_info, config)
             )
-            _LOGGER.debug("Forwarded %d lake(s) to sensor platform", len(discovery_info[CONF_LAKES]))
+            _LOGGER.info("Forwarded %d lake(s) to sensor platform", len(discovery_info[CONF_LAKES]))
         except Exception as exc:  # noqa: BLE001 - log and continue
             _LOGGER.error("Failed to forward configuration to sensor platform: %s", exc, exc_info=True)
 
