@@ -20,23 +20,23 @@ from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import (
 ZRXP_URL = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
 
 
-# Test: Successful ZRXP parsing for a named station
+# Test: Successful ZRXP parsing when SANR is explicitly provided (5005 Irrsee)
 # Expect: Latest reading has 23.1 at 2025-08-08 16:00 with TZ +01:00
 @pytest.mark.asyncio
 async def test_hydro_ooe_success_latest_from_json_series() -> None:
-    url = "https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7D"
+    url = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
     raw = {
         "name": "Irrsee / Zell am Moos",
         "url": url,
         "entity_id": "irrsee_zell",
-        "source": {"type": "hydro_ooe", "options": {}},
+        "source": {"type": "hydro_ooe", "options": {"station_id": "5005"}},
     }
     validated = LAKE_SCHEMA(raw)
     lake_cfg = build_lake_config(validated)
 
     zrxp_text = (
         "#ZRXPVERSION2300.100|*|ZRXPCREATORKiIOSystem.ZRXPV2R2_E|*| "
-        "#SANR16579|*|SNAMEIrrsee / Zell am Moos|*|SWATERIrrsee|*|CNRWT|*|CNAMEWassertemperatur|*| "
+        "#SANR5005|*|SNAMEZell am Moos|*|SWATERZeller See (Irrsee)|*|CNRWT|*|CNAMEWassertemperatur|*| "
         "#TZUTC+1|*|RINVAL-777|*| #CUNIT°C|*| #LAYOUT(timestamp,value)|*| "
         "20250808140000 22.8 20250808150000 23.0 20250808160000 23.1"
     )
@@ -53,12 +53,12 @@ async def test_hydro_ooe_success_latest_from_json_series() -> None:
     assert reading.source == "hydro_ooe"
 
 
-# Test: HTTP 404 from ZRXP endpoint
+# Test: HTTP 404 from ZRXP endpoint (SANR specified)
 # Expect: HttpError is raised
 @pytest.mark.asyncio
 async def test_hydro_ooe_http_404_raises() -> None:
-    url = "https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7D"
-    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {}}}
+    url = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {"station_id": "5005"}}}
     validated = LAKE_SCHEMA(raw)
     lake_cfg = build_lake_config(validated)
 
@@ -69,14 +69,14 @@ async def test_hydro_ooe_http_404_raises() -> None:
             await source.fetch_temperature()
 
 
-# Test: Timeout during ZRXP request
+# Test: Timeout during ZRXP request (SANR specified)
 # Expect: NetworkError
 @pytest.mark.asyncio
 async def test_hydro_ooe_timeout_raises_network() -> None:
     import aiohttp
 
-    url = "https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7D"
-    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {}}}
+    url = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {"station_id": "5005"}}}
     validated = LAKE_SCHEMA(raw)
     lake_cfg = build_lake_config(validated)
 
@@ -91,8 +91,8 @@ async def test_hydro_ooe_timeout_raises_network() -> None:
 # Expect: ParseError
 @pytest.mark.asyncio
 async def test_hydro_ooe_malformed_payload_raises_parse() -> None:
-    url = "https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7D"
-    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {}}}
+    url = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {"station_id": "5005"}}}
     validated = LAKE_SCHEMA(raw)
     lake_cfg = build_lake_config(validated)
 
@@ -108,8 +108,8 @@ async def test_hydro_ooe_malformed_payload_raises_parse() -> None:
 # Expect: NoDataError
 @pytest.mark.asyncio
 async def test_hydro_ooe_no_data_in_series_raises_nodata() -> None:
-    url = "https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7D"
-    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {}}}
+    url = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {"station_id": "5005"}}}
     validated = LAKE_SCHEMA(raw)
     lake_cfg = build_lake_config(validated)
 

@@ -146,6 +146,16 @@ if "homeassistant" not in sys.modules:
                 # Log update failure to help tests assert logging
                 self.logger.error("Coordinator '%s' initial refresh failed: %s", self.name, exc)
 
+        async def async_refresh(self):  # noqa: D401 - test stub
+            """Mimic Home Assistant coordinator refresh used in YAML/discovery path."""
+            try:
+                self.data = await self.update_method()
+                self.last_update_success = True
+            except Exception as exc:  # noqa: BLE001 - test stub behavior
+                self.last_update_success = False
+                self.data = None
+                self.logger.error("Coordinator '%s' refresh failed: %s", self.name, exc)
+
         # Allow generic subscripting syntax used by integration (DataUpdateCoordinator[...])
         @classmethod
         def __class_getitem__(cls, item):  # type: ignore[no-untyped-def]

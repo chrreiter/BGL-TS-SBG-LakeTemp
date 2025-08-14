@@ -90,22 +90,19 @@ async def test_factory_creates_gkd_bayern_source() -> None:
 # Expect: TemperatureReading 23.1°C at 16:00 with tz info and source 'hydro_ooe'
 @pytest.mark.asyncio
 async def test_factory_creates_hydro_ooe_source_and_fetches_latest() -> None:
-    url = (
-        "https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/"
-        "Zell%20am%20Moos/Wassertemperatur?period=P7D"
-    )
+    url = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
     raw = {
         "name": "Irrsee / Zell am Moos",
         "url": url,
         "entity_id": "irrsee_zell",
-        "source": {"type": "hydro_ooe", "options": {}},
+        "source": {"type": "hydro_ooe", "options": {"station_id": "5005"}},
     }
     validated = LAKE_SCHEMA(raw)
     lake_cfg = build_lake_config(validated)
 
     zrxp_text = (
         "#ZRXPVERSION2300.100|*|ZRXPCREATORKiIOSystem.ZRXPV2R2_E|*| "
-        "#SANR16579|*|SNAMEIrrsee / Zell am Moos|*|SWATERIrrsee|*|CNRWT|*|CNAMEWassertemperatur|*| "
+        "#SANR5005|*|SNAMEZell am Moos|*|SWATERZeller See (Irrsee)|*|CNRWT|*|CNAMEWassertemperatur|*| "
         "#TZUTC+1|*|RINVAL-777|*| #CUNIT°C|*| #LAYOUT(timestamp,value)|*| "
         "20250808140000 22.8 20250808150000 23.0 20250808160000 23.1"
     )

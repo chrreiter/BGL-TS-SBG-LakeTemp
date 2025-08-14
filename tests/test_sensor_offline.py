@@ -124,8 +124,8 @@ async def test_update_failure_sets_unavailable_and_logs(caplog) -> None:  # type
     assert len(added.entities) == 1
     sensor = added.entities[0]
     assert sensor.available is False
-    # Check coordinator logged initial refresh failure
-    assert any("initial refresh failed" in rec.getMessage().lower() for rec in caplog.records)
+    # Check coordinator logged refresh failure
+    assert any("refresh failed" in rec.getMessage().lower() for rec in caplog.records)
     # Ensure cleanup closes aiohttp sessions
     await sensor.async_will_remove_from_hass()
     await sensor.async_will_remove_from_hass()
