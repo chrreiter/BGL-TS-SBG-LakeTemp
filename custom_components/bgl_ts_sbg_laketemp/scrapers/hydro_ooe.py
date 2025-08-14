@@ -207,7 +207,9 @@ class HydroOOEScraper(AsyncSessionMixin):
         """Select the best matching block using configured identifiers.
 
         Matching strategy:
-        - Exact SANR match if provided
+        - Exact SANR match if provided, with preference for the water temperature
+          series (CNRWT / CNAME=Wassertemperatur) when multiple parameter blocks
+          exist for the same station
         - Otherwise, try flexible substring matching against ``SNAME`` and ``SWATER``
           fields. The ``sname_target`` is split into tokens on common delimiters so
           names like "Irrsee / Zell am Moos" can match either "Irrsee" (SWATER)
@@ -230,20 +232,51 @@ class HydroOOEScraper(AsyncSessionMixin):
                     t.strip() for t in re.split(r"[\s/,;|()-]+", sname_target) if len(t.strip()) >= 3
                 ]
 
+            # 1) SANR-based selection with parameter preference (WT)
+            if sanr_target:
+                best_block: Optional[str] = None
+                best_score: int = -10
+                best_param: Optional[str] = None
+                for block in blocks:
+                    sanr_match = re.search(r"#SANR(\d+)", block)
+                    sanr_val = sanr_match.group(1) if sanr_match else None
+                    if sanr_val != sanr_target:
+                        continue
+
+                    # Infer parameter (e.g., CNRWT / CNAMEWassertemperatur)
+                    param_code_match = re.search(r"\|\*\|CNR([A-Za-z0-9]+)\|\*\|", block)
+                    param_code = param_code_match.group(1).upper() if param_code_match else None
+                    param_name_match = re.search(r"\|\*\|CNAME([^|]*)\|\*\|", block)
+                    param_name = param_name_match.group(1).strip().lower() if param_name_match else ""
+
+                    score = 0
+                    # Strongly prefer water temperature blocks
+                    if param_code == "WT":
+                        score += 100
+                    elif "wasser" in param_name and "temperatur" in param_name:
+                        score += 90
+                    # Minor preference for any block that looks like temperature
+                    if "temperatur" in param_name:
+                        score += 2
+
+                    if score > best_score:
+                        best_score = score
+                        best_block = block
+                        best_param = param_code or None
+
+                if best_block is not None:
+                    op.set(match_type="sanr", sanr=sanr_target, parameter=best_param or "unknown")
+                    return best_block
+
+            # 2) Name-based selection with additional preference for WT
             chosen: Optional[str] = None
             best_score: int = -1
             for block in blocks:
-                # Extract SANR and SNAME
-                sanr_match = re.search(r"#SANR(\d+)", block)
                 sname_match = re.search(r"\|\*\|SNAME([^|]*)\|\*\|", block)
                 swater_match = re.search(r"\|\*\|SWATER([^|]*)\|\*\|", block)
-                sanr_val = sanr_match.group(1) if sanr_match else None
                 sname_val = sname_match.group(1).strip() if sname_match else None
                 swater_val = swater_match.group(1).strip() if swater_match else None
 
-                if sanr_target and sanr_val == sanr_target:
-                    op.set(match_type="sanr", sanr=sanr_target)
-                    return block
                 if sname_tokens:
                     cand_fields = [s for s in [sname_val, swater_val] if s]
                     cand_lower = [c.lower() for c in cand_fields]
@@ -260,18 +293,29 @@ class HydroOOEScraper(AsyncSessionMixin):
                     cl_join = " ".join(cand_lower)
                     if ("irrsee" in cl_join) and ("zell" in cl_join):
                         score += 1
+                    # Preference for water temperature parameter if visible
+                    if re.search(r"\|\*\|CNRWT\|\*\|", block):
+                        score += 3
+                    elif re.search(r"\|\*\|CNAME([^|]*)\|\*\|", block):
+                        pname = re.search(r"\|\*\|CNAME([^|]*)\|\*\|", block).group(1).strip().lower()  # type: ignore[union-attr]
+                        if "wasser" in pname and "temperatur" in pname:
+                            score += 2
+
                     if score > best_score:
                         best_score = score
                         chosen = block
-                if sname_target:
+                elif sname_target:
+                    # Minimal heuristic when tokens are not computed
                     cand_fields = [s for s in [sname_val, swater_val] if s]
                     if any(sname_target.lower() in f.lower() for f in cand_fields):
-                        # Consider this as a minimal score match if nothing better exists
                         if best_score < 0:
                             chosen = block
+
             if sname_target and chosen is not None:
                 op.set(match_type="sname_contains", query=sname_target)
-            elif sanr_target:
+                return chosen
+
+            if sanr_target:
                 op.set(match_type="sanr_not_found", sanr=sanr_target)
             else:
                 op.set(match_type="none")

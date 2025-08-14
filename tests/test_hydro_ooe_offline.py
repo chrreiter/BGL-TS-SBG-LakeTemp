@@ -53,6 +53,62 @@ async def test_hydro_ooe_success_latest_from_json_series() -> None:
     assert reading.source == "hydro_ooe"
 
 
+# Test: Prefer water temperature when multiple parameter blocks exist for same SANR
+# Expect: Chooses CNRWT/CNAME=Wassertemperatur over e.g., air temperature
+@pytest.mark.asyncio
+async def test_hydro_ooe_prefers_water_temperature_block_for_same_sanr() -> None:
+    url = ZRXP_URL
+    raw = {
+        "name": "Irrsee / Zell am Moos",
+        "url": url,
+        "entity_id": "irrsee_zell",
+        "source": {"type": "hydro_ooe", "options": {"station_id": "5005"}},
+    }
+    validated = LAKE_SCHEMA(raw)
+    lake_cfg = build_lake_config(validated)
+
+    # Two blocks with the same SANR 5005: first is air temp (simulate), second is water temp
+    zrxp_text = (
+        "#ZRXPVERSION2300.100|*|ZRXPCREATORKiIOSystem.ZRXPV2R2_E|*| "
+        "#SANR5005|*|SNAMEZell am Moos|*|SWATERZeller See (Irrsee)|*|CNRLT|*|CNAMELufttemperatur|*| "
+        "#TZUTC+1|*|RINVAL-777|*| #CUNIT°C|*| #LAYOUT(timestamp,value)|*| "
+        "20250808140000 15.1 20250808150000 15.0 "
+        "#SANR5005|*|SNAMEZell am Moos|*|SWATERZeller See (Irrsee)|*|CNRWT|*|CNAMEWassertemperatur|*| "
+        "#TZUTC+1|*|RINVAL-777|*| #CUNIT°C|*| #LAYOUT(timestamp,value)|*| "
+        "20250808140000 24.8 20250808150000 25.0"
+    )
+
+    with aioresponses() as mocked:
+        mocked.get(ZRXP_URL, status=200, body=zrxp_text, headers={"Content-Type": "text/plain"})
+        source = create_data_source(lake_cfg)
+        reading = await source.fetch_temperature()
+
+    assert isinstance(reading, TemperatureReading)
+    assert reading.temperature_c == 25.0
+
+
+# Test: Name-based selection prefers water temperature block when SANR is not provided
+# Expect: Chooses WT block for Irrsee/Zell tokens
+@pytest.mark.asyncio
+async def test_hydro_ooe_name_based_selection_prefers_wt() -> None:
+    from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import HydroOOEScraper
+
+    zrxp_text = (
+        "#SANR5005|*|SNAMEZell am Moos|*|SWATERZeller See (Irrsee)|*|CNRLT|*|CNAMELufttemperatur|*| "
+        "#TZUTC+1|*|RINVAL-777|*| #CUNIT°C|*| #LAYOUT(timestamp,value)|*| "
+        "20250808140000 15.1 20250808150000 15.0 "
+        "#SANR5005|*|SNAMEZell am Moos|*|SWATERZeller See (Irrsee)|*|CNRWT|*|CNAMEWassertemperatur|*| "
+        "#TZUTC+1|*|RINVAL-777|*| #CUNIT°C|*| #LAYOUT(timestamp,value)|*| "
+        "20250808140000 24.8 20250808150000 25.0"
+    )
+
+    with aioresponses() as mocked:
+        mocked.get(ZRXP_URL, status=200, body=zrxp_text, headers={"Content-Type": "text/plain"})
+        async with HydroOOEScraper(sname_contains="Irrsee / Zell am Moos") as scraper:
+            latest = await scraper.fetch_latest()
+
+    assert latest.temperature_c == 25.0
+
 # Test: HTTP 404 from ZRXP endpoint (SANR specified)
 # Expect: HttpError is raised
 @pytest.mark.asyncio
