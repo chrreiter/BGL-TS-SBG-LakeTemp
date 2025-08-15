@@ -100,10 +100,10 @@ async def test_salzburg_ogd_no_matching_lake() -> None:
                 await scraper.fetch_latest_for_lake("NonExistingLake")
 
 
-# Test: Adapter honors custom lake.url for Salzburg OGD
-# Expect: When only the custom URL is mocked, fetching returns latest reading (22.4°C at 14:00)
+# Test: Adapter ignores custom lake.url and uses official default URL
+# Expect: When only the official URL is mocked (not the custom one), fetching returns latest reading (22.4°C at 14:00)
 @pytest.mark.asyncio
-async def test_salzburg_ogd_adapter_prefers_configured_url() -> None:
+async def test_salzburg_ogd_adapter_uses_default_url() -> None:
     custom_url = "https://example.test/ogd/Seen.txt"
     raw = {
         "name": "Fuschlsee",
@@ -121,7 +121,8 @@ async def test_salzburg_ogd_adapter_prefers_configured_url() -> None:
     )
 
     with aioresponses() as mocked:
-        mocked.get(custom_url, status=200, body=payload)
+        # Only mock the official OGD URL; the factory/adapter should ignore custom_url
+        mocked.get(OGD_URL, status=200, body=payload)
         source = create_data_source(lake_cfg)
         reading = await source.fetch_temperature()
 

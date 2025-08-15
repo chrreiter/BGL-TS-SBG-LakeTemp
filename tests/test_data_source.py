@@ -149,10 +149,10 @@ async def test_factory_creates_salzburg_ogd_source_and_fetches_latest() -> None:
     assert reading.source == "salzburg_ogd"
 
 
-# Test: Factory prefers configured URL for Salzburg OGD over adapter default
-# Expect: Successful fetch when only the configured custom URL is mocked
+# Test: Factory ignores configured URL for Salzburg OGD and uses adapter default
+# Expect: Successful fetch when only the official OGD URL is mocked
 @pytest.mark.asyncio
-async def test_factory_salzburg_ogd_prefers_configured_url() -> None:
+async def test_factory_salzburg_ogd_uses_default_url() -> None:
     custom_url = "https://example.test/ogd/Seen.txt"
     raw = {
         "name": "Fuschlsee",
@@ -170,9 +170,8 @@ async def test_factory_salzburg_ogd_prefers_configured_url() -> None:
     )
 
     with aioresponses() as mocked:
-        # Only mock the custom URL. If the adapter ignores it and hits the default,
-        # the test will fail due to no matching mock.
-        mocked.get(custom_url, status=200, body=payload)
+        # Only mock the official OGD URL; adapter should not hit custom_url
+        mocked.get(OGD_URL, status=200, body=payload)
         source = create_data_source(lake_cfg)
         reading = await source.fetch_temperature()
 

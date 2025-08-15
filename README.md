@@ -121,3 +121,7 @@ bgl_ts_sbg_laketemp:
 Notes
 - If an optional field is omitted, its default above applies per lake.
 - To override behavior for a specific lake (e.g., stricter freshness), set the optional field in that lake’s block only.
+
+### Behavior change
+
+- Salzburg OGD: The top-level `url` is now informational only. Fetching always uses the official "Hydrografie Seen" TXT dataset endpoint, aligning behavior with Hydro OOE (whose `url` is also informational). Any custom `url` previously set for Salzburg OGD will be ignored for data retrieval.
