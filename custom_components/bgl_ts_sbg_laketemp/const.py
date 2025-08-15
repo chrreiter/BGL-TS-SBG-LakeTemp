@@ -131,7 +131,7 @@ class LakeConfig:
     """Validated configuration for a single lake sensor."""
 
     name: str
-    url: str
+    url: str | None
     entity_id: str
     scan_interval: int
     timeout_hours: int
@@ -187,10 +187,38 @@ def _validate_source_block(value: MutableMapping[str, Any]) -> Dict[str, Any]:
     return {CONF_SOURCE_TYPE: source_type.value, CONF_SOURCE_OPTIONS: options_in}
 
 
-LAKE_SCHEMA: Final = vol.Schema(
+def _enforce_url_requirement_by_source(value: MutableMapping[str, Any]) -> Dict[str, Any]:
+    """Enforce that ``url`` is required for some sources but optional for others.
+
+    - Required: gkd_bayern, generic_html (future)
+    - Optional: hydro_ooe, salzburg_ogd
+    """
+
+    if not isinstance(value, dict):
+        raise vol.Invalid("Invalid lake config: expected a mapping/dict")
+
+    source_block = value.get(CONF_SOURCE, {CONF_SOURCE_TYPE: DEFAULT_SOURCE_TYPE, CONF_SOURCE_OPTIONS: {}})
+    try:
+        source_type = LakeSourceType(source_block.get(CONF_SOURCE_TYPE, DEFAULT_SOURCE_TYPE))
+    except Exception as exc:  # noqa: BLE001
+        raise vol.Invalid("Invalid source.type in lake config") from exc
+
+    url_val = value.get(CONF_URL)
+
+    if source_type in (LakeSourceType.GKD_BAYERN, LakeSourceType.GENERIC_HTML):
+        if not isinstance(url_val, str) or not url_val:
+            raise vol.Invalid("'url' is required for source types gkd_bayern and generic_html")
+    else:
+        # For hydro_ooe and salzburg_ogd allow None or missing
+        pass
+
+    return value  # unchanged mapping
+
+
+_LAKE_FIELDS_SCHEMA: Final = vol.Schema(
     {
         vol.Required(CONF_NAME): vol.All(str, vol.Length(min=1, max=100)),
-        vol.Required(CONF_URL): _is_http_url,
+        vol.Optional(CONF_URL, default=None): vol.Any(None, _is_http_url),
         vol.Required(CONF_ENTITY_ID): _is_entity_id_slug,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL_SECONDS): _scan_seconds,
         vol.Optional(CONF_TIMEOUT_HOURS, default=DEFAULT_TIMEOUT_HOURS): _hours,
@@ -200,6 +228,8 @@ LAKE_SCHEMA: Final = vol.Schema(
         vol.Optional(CONF_SOURCE, default={CONF_SOURCE_TYPE: DEFAULT_SOURCE_TYPE, CONF_SOURCE_OPTIONS: {}}): _validate_source_block,
     }
 )
+
+LAKE_SCHEMA: Final = vol.All(_LAKE_FIELDS_SCHEMA, _enforce_url_requirement_by_source)
 
 CONFIG_SCHEMA: Final = vol.Schema(
     {
@@ -246,7 +276,7 @@ def build_lake_config(validated: Dict[str, Any]) -> LakeConfig:
 
     return LakeConfig(
         name=validated[CONF_NAME],
-        url=validated[CONF_URL],
+        url=validated.get(CONF_URL),
         entity_id=validated[CONF_ENTITY_ID],
         scan_interval=validated.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_SECONDS),
         timeout_hours=validated.get(CONF_TIMEOUT_HOURS, DEFAULT_TIMEOUT_HOURS),
