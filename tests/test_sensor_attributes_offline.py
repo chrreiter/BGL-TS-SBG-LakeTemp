@@ -63,7 +63,7 @@ async def test_sensor_extra_state_attributes_contains_expected_fields(caplog) ->
     added = _EntityList()
 
     with aioresponses() as mocked:
-        mocked.get(GKD_URL, status=200, body=GKD_HTML, headers={"Content-Type": "text/html; charset=utf-8"})
+        mocked.get(GKD_URL.rstrip("/") + "/tabelle", status=200, body=GKD_HTML, headers={"Content-Type": "text/html; charset=utf-8"})
         await async_setup_platform(hass={}, config={}, async_add_entities=added, discovery_info=discovery_info)
 
     assert len(added.entities) == 1

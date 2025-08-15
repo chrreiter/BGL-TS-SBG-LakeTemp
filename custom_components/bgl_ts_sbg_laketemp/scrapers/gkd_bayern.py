@@ -97,11 +97,10 @@ class GKDBayernScraper(AsyncSessionMixin):
             await session.close()
 
     Args:
-        url: The GKD Bayern base URL pointing to the measurement page.
-             Both the standard "messwerte" view and the explicit
-             "messwerte/tabelle" view are supported. If the table is not
-             found on the initial page, a fallback request to ``/tabelle``
-             will be attempted when applicable.
+        url: The GKD Bayern base URL for the measurement page. The scraper
+             will always target the explicit ".../tabelle" view derived from
+             this URL, regardless of whether the provided URL already ends
+             with "/tabelle" or not.
         user_agent: User-Agent header to use for requests.
         request_timeout_seconds: Total timeout per HTTP request.
         table_selector: Optional CSS selector to target a specific table.
@@ -153,7 +152,8 @@ class GKDBayernScraper(AsyncSessionMixin):
         Returns records sorted by timestamp ascending.
         """
 
-        html = await self._fetch_html_with_fallbacks(self._url)
+        target_url = self._to_table_url(self._url)
+        html = await self._fetch_html(target_url)
         records = self.parse_html_table(html)
         # Sort and deduplicate by timestamp
         records.sort(key=lambda r: r.timestamp)
@@ -167,30 +167,17 @@ class GKDBayernScraper(AsyncSessionMixin):
 
     # ----- Networking -----
 
-    async def _fetch_html_with_fallbacks(self, url: str) -> str:
-        """Fetch the HTML for the given URL, optionally trying `/tabelle`.
+    @staticmethod
+    def _to_table_url(url: str) -> str:
+        """Return the explicit table URL for a given GKD Bayern lake page.
 
-        The primary URL is fetched first. If a parse attempt finds no table,
-        a secondary request to ``<url>/tabelle`` is attempted, unless the URL
-        already ends with ``/tabelle``.
+        If the provided URL already ends with "/tabelle", it is returned as-is;
+        otherwise, "/tabelle" is appended.
         """
-
-        html_primary = await self._fetch_html(url)
-        if self._contains_measurement_table(html_primary):
-            return html_primary
-
-        if not url.rstrip("/").endswith("tabelle"):
-            alt_url = url.rstrip("/") + "/tabelle"
-            _LOGGER.debug(
-                "%s",
-                kv(component="scraper.gkd_bayern", operation="fallback", reason="no_table", alt_url=alt_url),
-            )
-            html_alt = await self._fetch_html(alt_url)
-            if self._contains_measurement_table(html_alt):
-                return html_alt
-
-        # Return primary even if it lacks an obvious table; downstream will raise ParseError
-        return html_primary
+        stripped = url.rstrip("/")
+        if stripped.endswith("tabelle"):
+            return stripped
+        return stripped + "/tabelle"
 
     async def _fetch_html(self, url: str) -> str:
         session = await self._ensure_session()
@@ -218,18 +205,6 @@ class GKDBayernScraper(AsyncSessionMixin):
             raise HttpError(f"Client error while fetching {url}: {exc}") from exc
 
     # ----- Parsing -----
-
-    @staticmethod
-    def _contains_measurement_table(html: str) -> bool:
-        try:
-            soup = BeautifulSoup(html, "html.parser")
-            for table in soup.find_all("table"):
-                header_texts = GKDBayernScraper._extract_header_texts(table)
-                if GKDBayernScraper._header_looks_like_measurement(header_texts):
-                    return True
-            return False
-        except Exception:  # noqa: BLE001 - best-effort check only
-            return False
 
     @staticmethod
     def parse_html_table(html: str) -> list[GKDBayernRecord]:

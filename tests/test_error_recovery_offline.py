@@ -41,16 +41,16 @@ OGD_URL = "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/H
 async def test_gkd_timeout_then_success_manual_recovery() -> None:
     html = (FIXTURES / "gkd_bayern_table_sample.html").read_text(encoding="utf-8")
 
-    # First attempt: timeout
+    # First attempt: timeout on /tabelle
     with aioresponses() as mocked:
-        mocked.get(GKD_URL, exception=aiohttp.ServerTimeoutError())
+        mocked.get(GKD_URL_FALLBACK, exception=aiohttp.ServerTimeoutError())
         async with GKDBayernScraper(GKD_URL) as scraper:
             with pytest.raises(GKDNetworkError):
                 await scraper.fetch_latest()
 
     # Second attempt: success
     with aioresponses() as mocked:
-        mocked.get(GKD_URL, status=200, body=html, headers={"Content-Type": "text/html; charset=utf-8"})
+        mocked.get(GKD_URL_FALLBACK, status=200, body=html, headers={"Content-Type": "text/html; charset=utf-8"})
         async with GKDBayernScraper(GKD_URL) as scraper:
             latest = await scraper.fetch_latest()
             assert latest.temperature_c == 23.1
@@ -98,7 +98,7 @@ async def test_gkd_partial_parsing_skips_bad_rows() -> None:
     """
 
     with aioresponses() as mocked:
-        mocked.get(GKD_URL, status=200, body=html_mixed)
+        mocked.get(GKD_URL_FALLBACK, status=200, body=html_mixed)
         async with GKDBayernScraper(GKD_URL) as scraper:
             latest = await scraper.fetch_latest()
     assert latest.temperature_c == 23.1
@@ -141,7 +141,7 @@ async def test_ogd_partial_parsing_skips_bad_rows() -> None:
 @pytest.mark.asyncio
 async def test_owned_session_closed_on_error() -> None:
     with aioresponses() as mocked:
-        mocked.get(GKD_URL, status=404)
+        mocked.get(GKD_URL_FALLBACK, status=404)
         scraper_ref = None
         try:
             async with GKDBayernScraper(GKD_URL) as scraper:
@@ -162,7 +162,7 @@ async def test_external_session_not_closed_on_error() -> None:
     session = aiohttp.ClientSession()
     try:
         with aioresponses() as mocked:
-            mocked.get(GKD_URL, status=404)
+            mocked.get(GKD_URL_FALLBACK, status=404)
             scraper = GKDBayernScraper(GKD_URL, session=session)
             with pytest.raises(GKDHttpError):
                 await scraper.fetch_latest()

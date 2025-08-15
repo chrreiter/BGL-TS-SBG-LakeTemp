@@ -32,10 +32,11 @@ def _messages_for(caplog, logger_name: str) -> List[str]:  # type: ignore[no-unt
 async def test_gkd_success_emits_http_and_parse_logs(caplog) -> None:  # type: ignore[no-untyped-def]
     caplog.set_level(logging.DEBUG)
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
     html = (pathlib.Path(__file__).parent / "fixtures" / "gkd_bayern_table_sample.html").read_text(encoding="utf-8")
 
     with aioresponses() as mocked:
-        mocked.get(url, status=200, body=html, headers={"Content-Type": "text/html; charset=utf-8"})
+        mocked.get(url_tab, status=200, body=html, headers={"Content-Type": "text/html; charset=utf-8"})
         async with GKDBayernScraper(url) as scraper:
             _ = await scraper.fetch_records()
 
@@ -45,22 +46,18 @@ async def test_gkd_success_emits_http_and_parse_logs(caplog) -> None:  # type: i
     assert any("operation=parse_table" in m and "op=finish" in m and "records=" in m and "rows=" in m and "tables=" in m for m in msgs)
 
 
-# Test: GKD fallback logs a structured 'fallback' event
-# Expect: a debug message with operation=fallback and reason=no_table and alt_url
+# Test: GKD uses explicit /tabelle URL
+# Expect: only one http_get roundtrip to the /tabelle URL and parse_table logs
 @pytest.mark.asyncio
-async def test_gkd_fallback_message_logged(caplog) -> None:  # type: ignore[no-untyped-def]
+async def test_gkd_targets_tabelle_directly(caplog) -> None:  # type: ignore[no-untyped-def]
     caplog.set_level(logging.DEBUG)
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
-    url_fallback = url.rstrip("/") + "/tabelle"
-    html_no_table = """
-    <html><body><p>diagramm ohne tabelle</p></body></html>
-    """
+    url_tab = url.rstrip("/") + "/tabelle"
     html_with_table = """
     <html><body>
       <table>
         <thead><tr><th>Datum</th><th>Wassertemperatur [°C]</th></tr></thead>
         <tbody>
-          <tr><td>08.08.2025 15:00</td><td>22,8</td></tr>
           <tr><td>08.08.2025 16:00</td><td>23,1</td></tr>
         </tbody>
       </table>
@@ -68,13 +65,12 @@ async def test_gkd_fallback_message_logged(caplog) -> None:  # type: ignore[no-u
     """
 
     with aioresponses() as mocked:
-        mocked.get(url, status=200, body=html_no_table)
-        mocked.get(url_fallback, status=200, body=html_with_table)
+        mocked.get(url_tab, status=200, body=html_with_table)
         async with GKDBayernScraper(url) as scraper:
             _ = await scraper.fetch_latest()
 
     msgs = _messages_for(caplog, GKD_LOGGER)
-    assert any("operation=fallback" in m and "reason=no_table" in m and "alt_url=" in m for m in msgs)
+    assert any("operation=http_get" in m and "op=finish" in m and f"url={url_tab}" in m for m in msgs)
 
 
 # Test: GKD parse error logs error with operation=parse_table
@@ -84,11 +80,10 @@ async def test_gkd_parse_error_logs_error(caplog) -> None:  # type: ignore[no-un
     caplog.set_level(logging.DEBUG)
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
     html_no_table = "<html><body><p>no table</p></body></html>"
-    url_fallback = url.rstrip("/") + "/tabelle"
+    url_tab = url.rstrip("/") + "/tabelle"
 
     with aioresponses() as mocked:
-        mocked.get(url, status=200, body=html_no_table)
-        mocked.get(url_fallback, status=200, body=html_no_table)
+        mocked.get(url_tab, status=200, body=html_no_table)
         async with GKDBayernScraper(url) as scraper:
             with pytest.raises(ParseError):
                 await scraper.fetch_records()

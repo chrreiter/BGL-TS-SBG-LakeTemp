@@ -71,6 +71,12 @@ async def async_setup_platform(hass: HomeAssistant, config: dict, async_add_enti
 
         try:
             sensor = await LakeTemperatureSensor.create(hass=hass, lake_config=lake_cfg)
+            # Perform an immediate refresh so initial state is available for tests and UI
+            try:
+                await sensor.coordinator.async_refresh()
+            except Exception:
+                # Coordinator stub logs failures; continue to add the entity
+                pass
             entities.append(sensor)
         except Exception as exc:  # noqa: BLE001 - resilient per-lake setup
             _LOGGER.error(

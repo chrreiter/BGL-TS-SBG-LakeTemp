@@ -8,7 +8,6 @@ concurrency guards, this suite simulates parallel usage with a shared
 
 Cases:
 - Multiple concurrent fetches with an external shared session
-- Ensuring fallback path is independent per concurrent call
 - Verifying no shared mutable state causes cross-talk
 """
 
@@ -46,12 +45,9 @@ async def test_concurrent_gkd_fetches_with_shared_session() -> None:
 
     async with aiohttp.ClientSession() as session:
         with aioresponses() as mocked:
-            # Two different lakes could be different URLs; here simulate by primary lacking table and using /tabelle
-            mocked.get(GKD_URL, status=200, body="<html><body><p>diagramm</p></body></html>")
             mocked.get(GKD_URL_TAB, status=200, body=html_a)
 
             # For a second call, respond with a different body on /tabelle
-            mocked.get("https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/other-18673956/messwerte", status=200, body="<html><body><p>diagramm</p></body></html>")
             mocked.get("https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/other-18673956/messwerte/tabelle", status=200, body=html_b)
 
             s1 = GKDBayernScraper(GKD_URL, session=session)
@@ -63,15 +59,13 @@ async def test_concurrent_gkd_fetches_with_shared_session() -> None:
     assert latest_b.temperature_c == 21.3
 
 
-# Title: Independent fallback per concurrent call — Expect: each call uses its own fallback URL
+# Title: Parallel calls hit /tabelle directly — Expect: both return same value
 @pytest.mark.asyncio
-async def test_independent_fallback_per_call() -> None:
+async def test_parallel_calls_target_tabelle_directly() -> None:
     html = _html_with_value("22,0")
     with aioresponses() as mocked:
-        mocked.get(GKD_URL, status=200, body="<html><body><p>diagramm</p></body></html>", repeat=True)
         mocked.get(GKD_URL_TAB, status=200, body=html, repeat=True)
 
-        # Launch two parallel calls to the same URL; both should use fallback independently
         async with GKDBayernScraper(GKD_URL) as scraper:
             res1, res2 = await asyncio.gather(scraper.fetch_latest(), scraper.fetch_latest())
 

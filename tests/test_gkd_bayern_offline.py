@@ -5,7 +5,7 @@ from __future__ import annotations
 Covers:
 - happy path using fixture HTML
 - invalid URL, HTTP errors, timeouts
-- missing table and fallback to "/tabelle"
+- missing table in the explicit "/tabelle" view
 - unparseable rows leading to NoDataError
 - out-of-range values are skipped
 - deduplication and sorting
@@ -33,11 +33,12 @@ FIXTURE_PATH = pathlib.Path(__file__).parent / "fixtures" / "gkd_bayern_table_sa
 @pytest.mark.asyncio
 async def test_fetch_latest_returns_newest_record() -> None:
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
     html = FIXTURE_PATH.read_text(encoding="utf-8")
 
     with aioresponses() as mocked:
         mocked.get(
-            url,
+            url_tab,
             status=200,
             body=html,
             headers={"Content-Type": "text/html; charset=utf-8"},
@@ -69,8 +70,9 @@ async def test_invalid_url_format_raises_http_error() -> None:
 @pytest.mark.asyncio
 async def test_http_404_raises_http_error() -> None:
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
     with aioresponses() as mocked:
-        mocked.get(url, status=404)
+        mocked.get(url_tab, status=404)
         async with GKDBayernScraper(url) as scraper:
             with pytest.raises(HttpError):
                 await scraper.fetch_latest()
@@ -81,14 +83,15 @@ async def test_http_404_raises_http_error() -> None:
 @pytest.mark.asyncio
 async def test_timeout_raises_network_error() -> None:
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
     with aioresponses() as mocked:
-        mocked.get(url, exception=aiohttp.ServerTimeoutError())
+        mocked.get(url_tab, exception=aiohttp.ServerTimeoutError())
         async with GKDBayernScraper(url) as scraper:
             with pytest.raises(NetworkError):
                 await scraper.fetch_latest()
 
 
-# Test: Missing measurement table on both primary and fallback
+# Test: Missing measurement table in /tabelle view
 # Expect: ParseError is raised
 @pytest.mark.asyncio
 async def test_missing_table_raises_parse_error() -> None:
@@ -100,21 +103,19 @@ async def test_missing_table_raises_parse_error() -> None:
       <p>Keine Tabelle vorhanden</p>
     </body></html>
     """
-    url_fallback = url.rstrip("/") + "/tabelle"
     with aioresponses() as mocked:
-        mocked.get(url, status=200, body=html_no_table)
-        mocked.get(url_fallback, status=200, body=html_no_table)
+        mocked.get(url.rstrip("/") + "/tabelle", status=200, body=html_no_table)
         async with GKDBayernScraper(url) as scraper:
             with pytest.raises(ParseError):
                 await scraper.fetch_records()
 
 
-# Test: Structure changed; rows unparseable even after fallback
+# Test: Structure changed; rows unparseable in /tabelle view
 # Expect: NoDataError is raised
 @pytest.mark.asyncio
 async def test_structure_changed_unparseable_rows_raise_nodata() -> None:
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
-    url_fallback = url.rstrip("/") + "/tabelle"
+    url_tab = url.rstrip("/") + "/tabelle"
     html_changed = """
     <html><body>
       <table>
@@ -127,23 +128,19 @@ async def test_structure_changed_unparseable_rows_raise_nodata() -> None:
     </body></html>
     """
     with aioresponses() as mocked:
-        mocked.get(url, status=200, body=html_changed)
-        mocked.get(url_fallback, status=200, body=html_changed)
+        mocked.get(url_tab, status=200, body=html_changed)
         async with GKDBayernScraper(url) as scraper:
             with pytest.raises(NoDataError):
                 await scraper.fetch_latest()
 
 
-# Test: Fallback to '/tabelle' when primary lacks table
+# Test: Always target '/tabelle' view
 # Expect: Successfully parse latest record (23.1 at 16:00)
 @pytest.mark.asyncio
-async def test_fallback_to_tabelle_when_primary_lacks_table() -> None:
+async def test_always_uses_tabelle_view() -> None:
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
-    url_fallback = url.rstrip("/") + "/tabelle"
+    url_tab = url.rstrip("/") + "/tabelle"
 
-    html_no_table = """
-    <html><body><h1>Aktuelle Messwerte</h1><p>Diagrammansicht ohne Tabelle</p></body></html>
-    """
     html_with_table = """
     <html><body>
       <table>
@@ -157,8 +154,8 @@ async def test_fallback_to_tabelle_when_primary_lacks_table() -> None:
     """
 
     with aioresponses() as mocked:
-        mocked.get(url, status=200, body=html_no_table)
-        mocked.get(url_fallback, status=200, body=html_with_table)
+        # Only mock the /tabelle URL; scraper must use it directly
+        mocked.get(url_tab, status=200, body=html_with_table)
         async with GKDBayernScraper(url) as scraper:
             latest = await scraper.fetch_latest()
             assert latest.temperature_c == 23.1
@@ -170,6 +167,7 @@ async def test_fallback_to_tabelle_when_primary_lacks_table() -> None:
 @pytest.mark.asyncio
 async def test_out_of_range_temperature_values_are_skipped_and_nodata_if_all_invalid() -> None:
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
     html_bad_values = """
     <html><body>
       <table>
@@ -182,7 +180,7 @@ async def test_out_of_range_temperature_values_are_skipped_and_nodata_if_all_inv
     </body></html>
     """
     with aioresponses() as mocked:
-        mocked.get(url, status=200, body=html_bad_values)
+        mocked.get(url_tab, status=200, body=html_bad_values)
         async with GKDBayernScraper(url) as scraper:
             with pytest.raises(NoDataError):
                 await scraper.fetch_latest()
@@ -193,6 +191,7 @@ async def test_out_of_range_temperature_values_are_skipped_and_nodata_if_all_inv
 @pytest.mark.asyncio
 async def test_deduplication_and_sorting() -> None:
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
     html_unsorted = """
     <html><body>
       <table>
@@ -207,7 +206,7 @@ async def test_deduplication_and_sorting() -> None:
     </body></html>
     """
     with aioresponses() as mocked:
-        mocked.get(url, status=200, body=html_unsorted)
+        mocked.get(url_tab, status=200, body=html_unsorted)
         async with GKDBayernScraper(url) as scraper:
             records = await scraper.fetch_records()
             assert len(records) == 3

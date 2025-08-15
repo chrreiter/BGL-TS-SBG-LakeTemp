@@ -31,11 +31,12 @@ OGD_URL = "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/H
 @pytest.mark.asyncio
 async def test_gkd_bayern_source_fetch_temperature() -> None:
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
     html = FIXTURE_PATH.read_text(encoding="utf-8")
 
     with aioresponses() as mocked:
         mocked.get(
-            url,
+            url_tab,
             status=200,
             body=html,
             headers={"Content-Type": "text/html; charset=utf-8"},
@@ -76,7 +77,7 @@ async def test_factory_creates_gkd_bayern_source() -> None:
     html = FIXTURE_PATH.read_text(encoding="utf-8")
     with aioresponses() as mocked:
         mocked.get(
-            lake_cfg.url,
+            lake_cfg.url.rstrip("/") + "/tabelle",
             status=200,
             body=html,
             headers={"Content-Type": "text/html; charset=utf-8"},

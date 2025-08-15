@@ -91,10 +91,13 @@ bgl_ts_sbg_laketemp:
 
 - **Required fields**
   - **name**: Display name of the lake sensor (1–100 chars).
+  - **entity_id**: Sensor entity id slug (lowercase, digits, underscores; max 64 chars), e.g., `seethal_abtsdorfer`.
+
+- **Optional fields (with defaults)**
   - **url**: HTTP(S) URL shown as an informational attribute on the sensor. Semantics by source:
-    - GKD Bayern: used as the page to scrape.
-    - Hydro OOE: informational only; fetching always uses the official ZRXP bulk file.
-    - Salzburg OGD: informational only; fetching always uses the official "Hydrografie Seen" TXT file.
+    - GKD Bayern: required and used as the page to scrape.
+    - Hydro OOE: optional and informational only; fetching always uses the official ZRXP bulk file.
+    - Salzburg OGD: optional and informational only; fetching always uses the official "Hydrografie Seen" TXT file.
   - **entity_id**: Sensor entity id slug (lowercase, digits, underscores; max 64 chars), e.g., `seethal_abtsdorfer`.
 
 - **Optional fields (with defaults)**
@@ -106,6 +109,7 @@ bgl_ts_sbg_laketemp:
 
 - **source.type** values
   - **gkd_bayern** (default): Scrapes GKD Bayern lake temperature tables.
+    - Behavior: The scraper always targets the explicit `.../tabelle` view derived from the configured URL.
     - **options**:
       - **table_selector** (optional): CSS selector to target a specific table on the page. Usually not needed.
       - **station_id** (optional): Accepted by the schema but typically inferred from the URL; not required for normal use.

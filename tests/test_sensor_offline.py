@@ -64,7 +64,7 @@ async def test_sensor_created_from_valid_discovery_and_refreshes(caplog) -> None
     added = _EntityList()
 
     with aioresponses() as mocked:
-        mocked.get(GKD_URL, status=200, body=GKD_HTML, headers={"Content-Type": "text/html; charset=utf-8"})
+        mocked.get(GKD_URL.rstrip("/") + "/tabelle", status=200, body=GKD_HTML, headers={"Content-Type": "text/html; charset=utf-8"})
         await async_setup_platform(hass={}, config={}, async_add_entities=added, discovery_info=discovery_info)
 
     assert len(added.entities) == 1
@@ -118,7 +118,7 @@ async def test_update_failure_sets_unavailable_and_logs(caplog) -> None:  # type
     added = _EntityList()
 
     with aioresponses() as mocked:
-        mocked.get(GKD_URL, status=404)
+        mocked.get(GKD_URL.rstrip("/") + "/tabelle", status=404)
         await async_setup_platform(hass={}, config={}, async_add_entities=added, discovery_info=discovery_info)
 
     assert len(added.entities) == 1

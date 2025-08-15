@@ -19,7 +19,7 @@ ONLINE = os.getenv("RUN_ONLINE") == "1"
 @pytest.mark.skipif(not ONLINE, reason="Set RUN_ONLINE=1 to enable online tests")
 @pytest.mark.asyncio
 async def test_gkd_bayern_real_table_latest() -> None:
-    # Explicit table URL; if the download fails (e.g., 404), this test shall error
+    # Base URL; scraper will target the explicit '/tabelle' view automatically
     url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
     async with GKDBayernScraper(url) as scraper:
         latest = await scraper.fetch_latest()
