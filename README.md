@@ -86,3 +86,38 @@ bgl_ts_sbg_laketemp:
         options:
           lake_name: Fuschlsee
 ```
+
+### Configuration reference
+
+- **Required fields**
+  - **name**: Display name of the lake sensor (1–100 chars).
+  - **url**: HTTP(S) URL shown as an informational attribute on the sensor. Semantics by source:
+    - GKD Bayern: used as the page to scrape.
+    - Hydro OOE: informational only; fetching always uses the official ZRXP bulk file.
+    - Salzburg OGD: informational only; fetching always uses the official "Hydrografie Seen" TXT file.
+  - **entity_id**: Sensor entity id slug (lowercase, digits, underscores; max 64 chars), e.g., `seethal_abtsdorfer`.
+
+- **Optional fields (with defaults)**
+  - **scan_interval**: Polling interval in seconds. Default: `1800` (30 minutes). Allowed range: 60–86400.
+  - **timeout_hours**: Maximum age of the latest reading before the sensor becomes `unknown`. Default: `24`. Allowed range: 1–336 (14 days).
+    - Behavior: If the scraped reading timestamp is older than `timeout_hours`, the sensor state is set to `unknown` to avoid showing stale data. Specify it only when overriding the default; in the example it’s shown once for demonstration.
+  - **user_agent**: User-Agent header used for HTTP requests. Default: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36`.
+  - **source**: Data source configuration block. Default: `{ type: gkd_bayern, options: {} }`.
+
+- **source.type** values
+  - **gkd_bayern** (default): Scrapes GKD Bayern lake temperature tables.
+    - **options**:
+      - **table_selector** (optional): CSS selector to target a specific table on the page. Usually not needed.
+      - **station_id** (optional): Accepted by the schema but typically inferred from the URL; not required for normal use.
+  - **hydro_ooe**: Scrapes Hydro OOE (Upper Austria) portal.
+    - **options**:
+      - **station_id** (optional): Explicit station id (string or int). If omitted, the integration attempts selection based on the top-level `name` as a hint.
+  - **salzburg_ogd**: Fetches the Salzburg OGD "Hydrografie Seen" text dataset.
+    - **options**:
+      - **lake_name** (optional): Overrides the name used to match a lake entry in the dataset. Defaults to the top-level `name`.
+    - Note: The configured top-level `url` is informational; the scraper always downloads the official TXT dataset.
+  - **generic_html**: Reserved for future use (not yet implemented).
+
+Notes
+- If an optional field is omitted, its default above applies per lake.
+- To override behavior for a specific lake (e.g., stricter freshness), set the optional field in that lake’s block only.
