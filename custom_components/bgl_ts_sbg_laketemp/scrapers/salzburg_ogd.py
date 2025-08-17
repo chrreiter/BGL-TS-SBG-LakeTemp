@@ -116,6 +116,8 @@ class SalzburgOGDScraper(AsyncSessionMixin):
         self._user_agent = user_agent or (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
         )
+        # Tracks the size of the most recent successful download (in bytes)
+        self._last_bytes_downloaded: int | None = None
         super().__init__(
             session=session,
             user_agent=self._user_agent,
@@ -133,9 +135,14 @@ class SalzburgOGDScraper(AsyncSessionMixin):
         Args:
             lake_name: Target lake name, e.g., "Fuschlsee".
 
+        Returns:
+            SalzburgOGDRecord: The newest parsed measurement for the lake.
+
         Raises:
             NoDataError: If the file contains no row matching the requested lake.
-            NetworkError, HttpError, ParseError: On failures.
+            NetworkError: On connectivity issues/timeouts.
+            HttpError: On non-2xx HTTP responses or client errors.
+            ParseError: If parsing fails due to an unexpected structure.
         """
 
         rows = await self._download_and_parse()
@@ -186,6 +193,15 @@ class SalzburgOGDScraper(AsyncSessionMixin):
     # ----- Networking and Parsing -----
 
     async def _download_and_parse(self) -> List[SalzburgOGDRecord]:
+        """Download the OGD source and parse it into normalized records.
+
+        Returns:
+            List[SalzburgOGDRecord]: Parsed measurement rows.
+
+        Raises:
+            ParseError: On header/column detection failures.
+            NoDataError: If no rows can be parsed into records.
+        """
         text = await self._fetch_text(self._url)
         with log_operation(_LOGGER, component="scraper.salzburg_ogd", operation="parse_payload") as op:
             try:
@@ -212,6 +228,18 @@ class SalzburgOGDScraper(AsyncSessionMixin):
             return results
 
     async def _fetch_text(self, url: str) -> str:
+        """Download text with robust decoding and consistent error handling.
+
+        Args:
+            url: The URL to download.
+
+        Returns:
+            str: Decoded response body.
+
+        Raises:
+            NetworkError: On connectivity or timeout issues.
+            HttpError: On non-2xx HTTP responses or client errors.
+        """
         session = await self._ensure_session()
         try:
             async with log_operation(
@@ -226,6 +254,11 @@ class SalzburgOGDScraper(AsyncSessionMixin):
                     except ClientResponseError as exc:
                         raise HttpError(f"HTTP error {exc.status} for {url}") from exc
                     raw = await resp.read()
+                    # Record bytes downloaded for coordinator-level summary logs
+                    try:
+                        self._last_bytes_downloaded = len(raw)
+                    except Exception:  # noqa: BLE001 - defensive; never raise from logging field
+                        self._last_bytes_downloaded = None
                     op.set(status=resp.status, bytes=len(raw))
                     # try declared, then utf-8, latin-1, cp1252; finally replace errors
                     candidates: List[str] = []
@@ -251,6 +284,11 @@ class SalzburgOGDScraper(AsyncSessionMixin):
             raise NetworkError(f"Timeout while fetching {url}") from exc
         except aiohttp.ClientError as exc:
             raise HttpError(f"Client error while fetching {url}: {exc}") from exc
+
+    @property
+    def last_bytes_downloaded(self) -> int | None:
+        """Return the size in bytes of the last successful download, if known."""
+        return self._last_bytes_downloaded
 
     @staticmethod
     def _split_header_rows(text: str) -> Tuple[List[str], List[List[str]]]:
@@ -279,6 +317,7 @@ class SalzburgOGDScraper(AsyncSessionMixin):
 
     @staticmethod
     def _normalize_header_token(token: str) -> str:
+        """Normalize a header token: lowercase, strip accents, collapse non-alnum to spaces."""
         # lowercase, remove diacritics and non alnum, collapse spaces
         t = unicodedata.normalize("NFKD", token)
         t = "".join(ch for ch in t if not unicodedata.combining(ch))
@@ -373,6 +412,7 @@ class SalzburgOGDScraper(AsyncSessionMixin):
 
     @staticmethod
     def _find_first(tokens: List[str], patterns: List[str]) -> Optional[int]:
+        """Return index of first token matching any regex pattern, or None."""
         for idx, tok in enumerate(tokens):
             for pat in patterns:
                 if re.search(pat, tok):
@@ -380,6 +420,10 @@ class SalzburgOGDScraper(AsyncSessionMixin):
         return None
 
     def _parse_row(self, row: List[str], column_map: Dict[str, int]) -> Optional[SalzburgOGDRecord]:
+        """Parse a CSV row into a record using the detected column indices.
+
+        Returns None when required fields are missing or unparsable.
+        """
         # Ensure row has at least the referenced indices
         max_idx = max(column_map.values())
         if len(row) <= max_idx:
@@ -431,6 +475,7 @@ class SalzburgOGDScraper(AsyncSessionMixin):
 
     @staticmethod
     def _parse_temperature_c(text: str) -> float:
+        """Parse a Celsius temperature string, allowing German decimal comma and units."""
         cleaned = (text or "").strip().lower()
         cleaned = cleaned.replace("°c", "").replace("°", "").replace(" c", " ")
         cleaned = cleaned.replace(" ", "").replace(",", ".")
@@ -446,6 +491,7 @@ class SalzburgOGDScraper(AsyncSessionMixin):
 
     @staticmethod
     def _parse_datetime_any(text: str) -> Optional[datetime]:
+        """Parse a datetime string in multiple formats, returning a tz-aware value."""
         t = (text or "").strip()
         if not t:
             return None
@@ -495,6 +541,7 @@ class SalzburgOGDScraper(AsyncSessionMixin):
 
     @staticmethod
     def _parse_datetime_from_parts(date_text: str, time_text: str) -> Optional[datetime]:
+        """Parse date and optional time components into a tz-aware datetime."""
         d = (date_text or "").strip()
         tm = (time_text or "").strip()
         if not d:
@@ -525,7 +572,11 @@ class SalzburgOGDScraper(AsyncSessionMixin):
 
     @staticmethod
     def _normalize_lake_key(name: str) -> str:
-        # Remove diacritics, lowercase, strip, remove common suffix 'see', compress spaces
+        """Return a normalized key for lake name for matching and grouping.
+
+        Removes diacritics, lowercases, strips, removes common 'see' suffix, and
+        collapses non-alphanumeric characters; applies known aliases and stems.
+        """
         base = unicodedata.normalize("NFKD", name)
         base = "".join(ch for ch in base if not unicodedata.combining(ch))
         base = base.lower().strip()

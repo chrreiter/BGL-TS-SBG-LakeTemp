@@ -39,9 +39,8 @@ def _load_yaml_config(path: Path) -> Dict[str, Any]:
 @pytest.mark.skipif(not ONLINE, reason="Set RUN_ONLINE=1 to enable online tests")
 @pytest.mark.asyncio
 async def test_examples_configuration_latest_for_all_lakes() -> None:
-    # Load and validate YAML
-    root = Path(__file__).resolve().parents[1]
-    yaml_path = root / "examples" / "configuration.yaml"
+    # Load and validate YAML from a simplified fixture to avoid HA-specific !include tags
+    yaml_path = Path(__file__).parent / "fixtures" / "example_configuration_simplified.yaml"
     raw = _load_yaml_config(yaml_path)
 
     assert isinstance(raw, dict) and "bgl_ts_sbg_laketemp" in raw

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 import aiohttp
 
@@ -35,15 +35,28 @@ from .const import (
     DEFAULT_USER_AGENT,
     DOMAIN,
     LAKE_SCHEMA,
+    LakeConfig,
+    LakeSourceType,
     build_lake_config,
 )
 from .data_source import DataSourceInterface, TemperatureReading, create_data_source
+from .dataset_coordinators import (
+    BaseDatasetCoordinator,
+    get_or_create_dataset_manager,
+    SalzburgOGDDatasetCoordinator,
+    HydroOoeDatasetCoordinator,
+)
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass: HomeAssistant, config: dict, async_add_entities, discovery_info: Optional[dict] = None) -> None:  # type: ignore[no-untyped-def]
+async def async_setup_platform(
+    hass: HomeAssistant,
+    config: dict[str, Any],
+    async_add_entities: Callable[[List[SensorEntity]], None],
+    discovery_info: Optional[dict[str, Any]] = None,
+) -> None:
     """Set up lake temperature sensors from YAML via discovery.
 
     The integration uses a domain-level YAML schema under ``bgl_ts_sbg_laketemp:``.
@@ -71,9 +84,11 @@ async def async_setup_platform(hass: HomeAssistant, config: dict, async_add_enti
 
         try:
             sensor = await LakeTemperatureSensor.create(hass=hass, lake_config=lake_cfg)
-            # Perform an immediate refresh so initial state is available for tests and UI
+            # For per-lake coordinators, perform an immediate refresh so initial state is available.
+            # For aggregated datasets, skip here to avoid double-refresh when multiple sensors share one coordinator.
             try:
-                await sensor.coordinator.async_refresh()
+                if getattr(sensor, "_dataset_manager", None) is None:
+                    await sensor.coordinator.async_refresh()
             except Exception:
                 # Coordinator stub logs failures; continue to add the entity
                 pass
@@ -93,7 +108,7 @@ async def async_setup_platform(hass: HomeAssistant, config: dict, async_add_enti
     else:
         _LOGGER.warning("No valid lake configurations; no sensors created")
 
-class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], SensorEntity):
+class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
     """Sensor representing the latest water temperature for a configured lake.
 
     Each instance manages its own external ``aiohttp.ClientSession`` to ensure a
@@ -109,16 +124,31 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
         self,
         *,
         hass: HomeAssistant,
-        lake_config,
-        coordinator: DataUpdateCoordinator[TemperatureReading | None],
-        data_source: DataSourceInterface,
-        session: aiohttp.ClientSession,
+        lake_config: LakeConfig,
+        coordinator: DataUpdateCoordinator,
+        data_source: DataSourceInterface | None,
+        session: aiohttp.ClientSession | None,
+        dataset_manager: BaseDatasetCoordinator | None = None,
+        aggregated_lookup_key: str | None = None,
     ) -> None:
+        """Initialize the lake temperature sensor.
+
+        Args:
+            hass: Home Assistant instance.
+            lake_config: Validated configuration for this lake.
+            coordinator: Update coordinator (per-lake or dataset-level).
+            data_source: Per-lake data source if applicable; ``None`` for aggregated datasets.
+            session: Owned HTTP session for per-lake sensors; ``None`` for aggregated datasets.
+            dataset_manager: Dataset coordinator when using aggregated sources.
+            aggregated_lookup_key: Key used to extract this lake's reading from the dataset mapping.
+        """
         super().__init__(coordinator)
         self.hass = hass
         self._lake = lake_config
         self._data_source = data_source
         self._session = session
+        self._dataset_manager = dataset_manager
+        self._aggregated_lookup_key = aggregated_lookup_key
 
         # Core attributes
         self._attr_name = self._lake.name
@@ -133,15 +163,59 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
         )
 
     @classmethod
-    async def create(cls, *, hass: HomeAssistant, lake_config) -> "LakeTemperatureSensor":
-        """Factory to create an instance with its coordinator and data source."""
+    async def create(cls, *, hass: HomeAssistant, lake_config: LakeConfig) -> "LakeTemperatureSensor":
+        """Create and return a sensor with the appropriate coordinator.
 
-        # Create a dedicated external session with UA header for this lake
+        Depending on the configured source type, this either:
+        - Registers the lake with a shared dataset coordinator (Salzburg OGD, Hydro OOE), or
+        - Creates a per-lake data source and coordinator (GKD and others).
+        """
+
+        source_type = lake_config.source.type
+
+        # Aggregated dataset: Salzburg OGD
+        if source_type is LakeSourceType.SALZBURG_OGD:
+            manager = get_or_create_dataset_manager(
+                hass,
+                dataset_id="salzburg_ogd_seen",
+                factory=lambda h, did: SalzburgOGDDatasetCoordinator(h, did),
+            )
+            coordinator, lookup_key = manager.register_lake(lake_config)
+            sensor = cls(
+                hass=hass,
+                lake_config=lake_config,
+                coordinator=coordinator,
+                data_source=None,
+                session=None,
+                dataset_manager=manager,
+                aggregated_lookup_key=lookup_key,
+            )
+            return sensor
+
+        # Aggregated dataset: Hydro OOE
+        if source_type is LakeSourceType.HYDRO_OOE:
+            manager = get_or_create_dataset_manager(
+                hass,
+                dataset_id=HydroOoeDatasetCoordinator.DATASET_ID,  # type: ignore[attr-defined]
+                factory=lambda h, did: HydroOoeDatasetCoordinator(h),
+            )
+            coordinator, lookup_key = manager.register_lake(lake_config)
+            sensor = cls(
+                hass=hass,
+                lake_config=lake_config,
+                coordinator=coordinator,
+                data_source=None,
+                session=None,
+                dataset_manager=manager,
+                aggregated_lookup_key=lookup_key,
+            )
+            return sensor
+
+        # Per-lake coordinator: GKD and others
         timeout = aiohttp.ClientTimeout(total=20)
         headers = {"User-Agent": lake_config.user_agent or DEFAULT_USER_AGENT}
         session = aiohttp.ClientSession(headers=headers, timeout=timeout)
 
-        # Build the data source with the external session for connection reuse
         data_source = create_data_source(lake_config, session=session)
 
         async def _async_update_data() -> TemperatureReading | None:
@@ -151,7 +225,7 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
                 raise UpdateFailed(str(exc)) from exc
             return reading
 
-        coordinator = DataUpdateCoordinator[TemperatureReading | None](
+        coordinator = DataUpdateCoordinator(
             hass,
             _LOGGER,
             name=f"{DOMAIN}:{lake_config.entity_id}",
@@ -166,17 +240,25 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
             data_source=data_source,
             session=session,
         )
-
-        # Do not block platform setup on initial network I/O; request refresh later
         return sensor
 
     @property
     def available(self) -> bool:
+        # Aggregated dataset: available only if coordinator succeeded AND this lake has data in the mapping
+        data = self.coordinator.data
+        if isinstance(data, dict) and self._aggregated_lookup_key:
+            return bool(self.coordinator.last_update_success and (self._aggregated_lookup_key in (data or {})))
+        # Per-lake: rely on coordinator success
         return self.coordinator.last_update_success
 
     @property
     def native_value(self) -> float | None:
-        reading = self.coordinator.data
+        data = self.coordinator.data
+        reading: TemperatureReading | None
+        if isinstance(data, dict) and self._aggregated_lookup_key:
+            reading = data.get(self._aggregated_lookup_key)
+        else:
+            reading = data
         if reading is None:
             return None
 
@@ -189,7 +271,14 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
                 rec_ts = reading.timestamp.replace(tzinfo=timezone.utc)
             else:
                 rec_ts = reading.timestamp.astimezone(timezone.utc)
-            if now - rec_ts > max_age:
+            age = now - rec_ts
+            if age > max_age:
+                _LOGGER.debug(
+                    "Lake '%s': latest reading is stale (age=%ss > threshold=%ss)",
+                    self._lake.name,
+                    int(age.total_seconds()),
+                    int(max_age.total_seconds()),
+                )
                 return None
         except Exception:  # noqa: BLE001 - be resilient; do not break state
             return None
@@ -198,7 +287,12 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        reading = self.coordinator.data
+        data = self.coordinator.data
+        reading: TemperatureReading | None
+        if isinstance(data, dict) and self._aggregated_lookup_key:
+            reading = data.get(self._aggregated_lookup_key)
+        else:
+            reading = data
         attrs: Dict[str, Any] = {
             "lake_name": self._lake.name,
             "source_type": getattr(reading, "source", None) if reading else None,
@@ -216,17 +310,31 @@ class LakeTemperatureSensor(CoordinatorEntity[TemperatureReading | None], Sensor
         return attrs
 
     async def async_will_remove_from_hass(self) -> None:
+        """Cleanup resources or unregister from dataset before entity removal."""
+        # Unregister from dataset manager if aggregated
+        if getattr(self, "_dataset_manager", None) is not None:
+            try:
+                self._dataset_manager.unregister_lake(self._lake.entity_id)  # type: ignore[union-attr]
+            except Exception:
+                pass
+            return
+
+        # Per-lake cleanup
         try:
-            await self._data_source.close()
+            if self._data_source is not None:
+                await self._data_source.close()
         finally:
-            if not self._session.closed:
+            if self._session is not None and not self._session.closed:
                 await self._session.close()
 
     async def async_added_to_hass(self) -> None:
+        """Perform an initial refresh after the entity is added to Home Assistant."""
         await super().async_added_to_hass()
         # Perform an immediate initial refresh so state is available promptly
         try:
-            await self.coordinator.async_refresh()
+            # For aggregated datasets, avoid duplicate refresh if data already present
+            if not (isinstance(self.coordinator.data, dict) and self._aggregated_lookup_key):
+                await self.coordinator.async_refresh()
         except Exception:  # noqa: BLE001 - best-effort; errors will reflect in availability
             return
 

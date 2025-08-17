@@ -136,9 +136,14 @@ class GKDBayernScraper(AsyncSessionMixin):
     async def fetch_latest(self) -> GKDBayernRecord:
         """Fetch and return the most recent record.
 
+        Returns:
+            GKDBayernRecord: The newest parsed measurement.
+
         Raises:
             NoDataError: If the page contains no usable measurement rows.
-            NetworkError, HttpError, ParseError: On failures.
+            NetworkError: On connectivity issues/timeouts.
+            HttpError: On non-2xx HTTP responses or client errors.
+            ParseError: If the HTML cannot be parsed as expected.
         """
 
         records = await self.fetch_records()
@@ -149,7 +154,14 @@ class GKDBayernScraper(AsyncSessionMixin):
     async def fetch_records(self) -> list[GKDBayernRecord]:
         """Fetch and parse all available rows from the weekly table.
 
-        Returns records sorted by timestamp ascending.
+        Returns:
+            list[GKDBayernRecord]: Records sorted by timestamp ascending.
+
+        Raises:
+            NetworkError: On connectivity issues/timeouts.
+            HttpError: On non-2xx HTTP responses or client errors.
+            ParseError: If the HTML cannot be parsed as expected.
+            NoDataError: If no rows can be parsed from the table.
         """
 
         target_url = self._to_table_url(self._url)
@@ -171,8 +183,12 @@ class GKDBayernScraper(AsyncSessionMixin):
     def _to_table_url(url: str) -> str:
         """Return the explicit table URL for a given GKD Bayern lake page.
 
-        If the provided URL already ends with "/tabelle", it is returned as-is;
-        otherwise, "/tabelle" is appended.
+        Args:
+            url: Base GKD Bayern lake URL.
+
+        Returns:
+            str: URL that explicitly ends with "/tabelle".
+
         """
         stripped = url.rstrip("/")
         if stripped.endswith("tabelle"):
@@ -180,6 +196,18 @@ class GKDBayernScraper(AsyncSessionMixin):
         return stripped + "/tabelle"
 
     async def _fetch_html(self, url: str) -> str:
+        """Download and return the HTML content for the given URL.
+
+        Args:
+            url: Target URL to fetch.
+
+        Returns:
+            str: Raw HTML text.
+
+        Raises:
+            NetworkError: On connectivity or timeout issues.
+            HttpError: On non-2xx HTTP responses or client errors.
+        """
         session = await self._ensure_session()
         try:
             async with log_operation(
@@ -210,7 +238,15 @@ class GKDBayernScraper(AsyncSessionMixin):
     def parse_html_table(html: str) -> list[GKDBayernRecord]:
         """Parse HTML content and return measurement rows.
 
-        Raises ParseError or NoDataError when structure is unexpected or empty.
+        Args:
+            html: HTML content of the table page.
+
+        Returns:
+            list[GKDBayernRecord]: Parsed measurement records.
+
+        Raises:
+            ParseError: When the table structure is unexpected.
+            NoDataError: When no measurement rows can be parsed.
         """
 
         with log_operation(_LOGGER, component="scraper.gkd_bayern", operation="parse_table") as op:
@@ -289,6 +325,18 @@ class GKDBayernScraper(AsyncSessionMixin):
 
     @staticmethod
     def _extract_header_texts(table) -> list[str]:  # type: ignore[no-untyped-def]
+        """Extract header cell texts from a table element.
+
+        Args:
+            table: BeautifulSoup table element.
+
+        Returns:
+            list[str]: Header texts in display order.
+
+        Notes:
+            Attempts to read from ``<thead>`` first, falling back to the first row
+            if no explicit header section exists.
+        """
         header_texts: list[str] = []
         # Try thead first
         thead = table.find("thead")
@@ -305,16 +353,42 @@ class GKDBayernScraper(AsyncSessionMixin):
 
     @staticmethod
     def _header_looks_like_measurement(header_texts: Sequence[str]) -> bool:
+        """Return True if headers resemble a measurement table for date/temperature.
+
+        Args:
+            header_texts: Header strings extracted from the table.
+
+        Returns:
+            bool: True if likely a measurement table.
+        """
         combined = " ".join(h.lower() for h in header_texts)
         return ("datum" in combined or "date" in combined) and ("wassertemperatur" in combined or "°c" in combined)
 
     @staticmethod
     def _clean_text(text: str) -> str:
+        """Normalize whitespace in text and trim leading/trailing spaces.
+
+        Args:
+            text: Input string.
+
+        Returns:
+            str: Cleaned string.
+        """
         return " ".join(text.split()).strip()
 
     @staticmethod
     def _parse_german_datetime(text: str) -> datetime:
-        """Parse a German-style datetime string like '07.08.2025 16:00'."""
+        """Parse a German-style datetime string like '07.08.2025 16:00'.
+
+        Args:
+            text: Date/time string in German formats.
+
+        Returns:
+            datetime: Timezone-aware datetime in Europe/Berlin.
+
+        Raises:
+            ValueError: If none of the supported formats match.
+        """
 
         # Remove potential trailing labels or non-breaking spaces
         cleaned = GKDBayernScraper._clean_text(text)
@@ -333,8 +407,14 @@ class GKDBayernScraper(AsyncSessionMixin):
     def _parse_temperature_c(text: str) -> float:
         """Parse Celsius temperature with possible German decimal comma.
 
-        Accepts strings like '22,0', '21.3', or '21,3 °C'. Returns a float in
-        Celsius and validates a plausible range.
+        Args:
+            text: Temperature string such as '22,0', '21.3', or '21,3 °C'.
+
+        Returns:
+            float: Temperature in Celsius.
+
+        Raises:
+            ValueError: If the value is missing or out of plausible range.
         """
 
         cleaned = GKDBayernScraper._clean_text(text)

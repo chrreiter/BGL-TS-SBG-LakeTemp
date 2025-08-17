@@ -211,24 +211,81 @@ def _install_homeassistant_stubs() -> None:
     """
 
     if "homeassistant" in sys.modules:
-        return
+        # Ensure helpers stub exists even if root was pre-injected
+        if "homeassistant.helpers.update_coordinator" in sys.modules:
+            return
 
     import types
 
-    ha_pkg = types.ModuleType("homeassistant")
-    sys.modules["homeassistant"] = ha_pkg
+    # Root package stub (mark as package by setting __path__)
+    ha_pkg = sys.modules.get("homeassistant")
+    if ha_pkg is None:
+        ha_pkg = types.ModuleType("homeassistant")
+        ha_pkg.__path__ = []  # mark as namespace/package
+        sys.modules["homeassistant"] = ha_pkg
+    else:
+        setattr(ha_pkg, "__path__", getattr(ha_pkg, "__path__", []))
 
-    ha_const = types.ModuleType("homeassistant.const")
-    class Platform(str):  # type: ignore[too-many-ancestors]
-        SENSOR = "sensor"
-    ha_const.Platform = Platform
-    sys.modules["homeassistant.const"] = ha_const
+    # homeassistant.const
+    if "homeassistant.const" not in sys.modules:
+        ha_const = types.ModuleType("homeassistant.const")
+        class Platform(str):  # type: ignore[too-many-ancestors]
+            SENSOR = "sensor"
+        ha_const.Platform = Platform
+        sys.modules["homeassistant.const"] = ha_const
 
-    ha_core = types.ModuleType("homeassistant.core")
-    class HomeAssistant(dict):
-        pass
-    ha_core.HomeAssistant = HomeAssistant
-    sys.modules["homeassistant.core"] = ha_core
+    # homeassistant.core
+    if "homeassistant.core" not in sys.modules:
+        ha_core = types.ModuleType("homeassistant.core")
+        class HomeAssistant(dict):
+            pass
+        ha_core.HomeAssistant = HomeAssistant
+        sys.modules["homeassistant.core"] = ha_core
+
+    # homeassistant.helpers and homeassistant.helpers.update_coordinator
+    if "homeassistant.helpers" not in sys.modules:
+        ha_helpers = types.ModuleType("homeassistant.helpers")
+        sys.modules["homeassistant.helpers"] = ha_helpers
+
+    if "homeassistant.helpers.update_coordinator" not in sys.modules:
+        ha_helpers_uc = types.ModuleType("homeassistant.helpers.update_coordinator")
+
+        # Minimal classes used by dataset_coordinators
+        import logging as _logging
+        from datetime import timedelta as _timedelta
+        from typing import Any as _Any, Dict as _Dict, Callable as _Callable, Generic as _Generic, TypeVar as _TypeVar
+
+        _T = _TypeVar("_T")
+
+        class UpdateFailed(Exception):
+            pass
+
+        class DataUpdateCoordinator(_Generic[_T]):
+            def __init__(self, hass: _Any, logger: _logging.Logger | None, *, name: str, update_method: _Callable[[], _Any], update_interval: _timedelta):
+                self.hass = hass
+                self.logger = logger or _logging.getLogger(__name__)
+                self.name = name
+                self.update_method = update_method
+                self.update_interval = update_interval
+                self.data: _Any = None
+                self.last_update_success: bool = False
+
+            async def async_refresh(self) -> None:
+                try:
+                    self.data = await self.update_method()
+                    self.last_update_success = True
+                except Exception as exc:  # noqa: BLE001
+                    self.last_update_success = False
+                    self.data = None
+                    self.logger.error("Coordinator '%s' refresh failed: %s", self.name, exc)
+
+            @classmethod
+            def __class_getitem__(cls, item):  # type: ignore[no-untyped-def]
+                return cls
+
+        ha_helpers_uc.DataUpdateCoordinator = DataUpdateCoordinator
+        ha_helpers_uc.UpdateFailed = UpdateFailed
+        sys.modules["homeassistant.helpers.update_coordinator"] = ha_helpers_uc
 
 
 def _ensure_test_dependencies_installed() -> None:

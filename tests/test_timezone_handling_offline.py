@@ -18,7 +18,7 @@ import pytest
 
 from custom_components.bgl_ts_sbg_laketemp.scrapers.gkd_bayern import GKDBayernScraper, BERLIN_TZ
 from custom_components.bgl_ts_sbg_laketemp.scrapers.salzburg_ogd import SalzburgOGDScraper, VIENNA_TZ
-from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import HydroOOEScraper
+from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import HydroOOEScraper, parse_zrxp_block
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "timezone_test_data.json"
@@ -106,9 +106,8 @@ async def test_hydro_ooe_tz_header_numeric_offsets() -> None:
 			f"#SANR99999|*|SNAMEFoo|*|SWATERSomeLake|*| {header}|*|RINVAL-777|*| #CUNIT°C|*| #LAYOUT(timestamp,value)|*| "
 			f"{ts} {val}"
 		)
-		# Use private method via instance to avoid HTTP
-		scraper = HydroOOEScraper()
-		records = scraper._parse_zrxp_block(block)  # type: ignore[attr-defined]
+		# Use parser helper to avoid HTTP
+		records = parse_zrxp_block(block)
 		assert len(records) == 1
 		dt = records[0].timestamp
 		assert dt.tzinfo is not None
@@ -123,8 +122,7 @@ async def test_hydro_ooe_missing_tz_defaults_to_utc() -> None:
 		"#SANR12345|*|SNAMEFoo|*|SWATERSomeLake|*| #LAYOUT(timestamp,value)|*| "
 		"20250808204500 22.3"
 	)
-	scraper = HydroOOEScraper()
-	records = scraper._parse_zrxp_block(blk)  # type: ignore[attr-defined]
+	records = parse_zrxp_block(blk)
 	assert len(records) == 1
 	dt = records[0].timestamp
 	assert dt.tzinfo is not None

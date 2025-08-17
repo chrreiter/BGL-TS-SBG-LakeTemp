@@ -60,8 +60,10 @@ class TemperatureReading:
         """Validate and normalize the ``source`` identifier.
 
         Ensures the ``source`` field corresponds to a supported ``LakeSourceType``
-        value. Accepts either the enum value string or a ``LakeSourceType``
-        instance, normalizing the latter to its ``.value``.
+        value.
+
+        Raises:
+            ValueError: If the provided source value is not recognized.
         """
         # Normalize if caller passed an enum instance despite the type hint
         if isinstance(self.source, LakeSourceType):
@@ -88,14 +90,15 @@ class DataSourceInterface(abc.ABC):
         """Fetch the most recent temperature reading.
 
         Returns:
-            A ``TemperatureReading`` containing the latest measurement.
+            TemperatureReading: Latest measurement from the source.
         """
 
     @abc.abstractmethod
     def get_update_frequency(self) -> timedelta:
         """Return how frequently the upstream data is expected to update.
 
-        This is advisory and can inform default polling intervals.
+        Returns:
+            timedelta: Advisory cadence for upstream updates.
         """
 
     async def close(self) -> None:  # noqa: D401 - trivial no-op override point
@@ -149,6 +152,7 @@ class GKDBayernSource(DataSourceInterface):
         self._session = session
 
     async def fetch_temperature(self) -> TemperatureReading:
+        """Fetch the latest temperature from the configured GKD Bayern page."""
         if self._session is not None:
             scraper = GKDBayernScraper(
                 self._url,
@@ -174,7 +178,8 @@ class GKDBayernSource(DataSourceInterface):
         )
 
     def get_update_frequency(self) -> timedelta:
-        # GKD Bayern lake temperature tables typically update hourly; we choose
+        """Return expected update cadence for GKD Bayern tables (~30 minutes)."""
+        # GKD Bayern lake temperature tables typically update hourly; choose
         # a conservative 30 minutes to pick up changes reasonably quickly.
         return timedelta(minutes=30)
 
@@ -191,7 +196,7 @@ def create_data_source(
         session: Optional shared ``aiohttp.ClientSession`` for HTTP reuse.
 
     Returns:
-        A ``DataSourceInterface`` implementation for the configured source type.
+        DataSourceInterface: Implementation for the configured source type.
 
     Raises:
         NotImplementedError: If the source type is not supported yet.
@@ -267,6 +272,7 @@ class _HydroOOESourceAdapter(DataSourceInterface):
         self._name_hint = name_hint
 
     async def fetch_temperature(self) -> TemperatureReading:
+        """Fetch the latest temperature for the selected Hydro OOE station."""
         if self._session is not None:
             scraper = HydroOOEScraper(
                 station_id=self._station_id,
@@ -292,6 +298,7 @@ class _HydroOOESourceAdapter(DataSourceInterface):
         )
 
     def get_update_frequency(self) -> timedelta:
+        """Return expected update cadence for Hydro OOE (~30 minutes)."""
         return timedelta(minutes=30)
 
 
@@ -445,6 +452,7 @@ class _SalzburgOGDSourceAdapter(DataSourceInterface):
         self._url = url
 
     async def fetch_temperature(self) -> TemperatureReading:
+        """Fetch the latest temperature for the configured Salzburg OGD lake."""
         if self._session is not None:
             scraper = SalzburgOGDScraper(
                 url=self._url,
@@ -468,5 +476,6 @@ class _SalzburgOGDSourceAdapter(DataSourceInterface):
         )
 
     def get_update_frequency(self) -> timedelta:
+        """Return expected update cadence for Salzburg OGD (~2 hours)."""
         # Source notes: updates every 2-3 hours; choose 2 hours conservatively
         return timedelta(hours=2)
