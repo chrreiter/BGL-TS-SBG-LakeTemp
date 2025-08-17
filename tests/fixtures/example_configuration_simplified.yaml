@@ -1,25 +1,5 @@
-# Loads default set of integrations. Do not remove.
-default_config:
-
-# Load frontend themes from the themes folder
-frontend:
-  themes: !include_dir_merge_named themes
-
-automation: !include automations.yaml
-script: !include scripts.yaml
-scene: !include scenes.yaml
-
-logger:
-  default: info
-  logs:
-    homeassistant.components.cloud: debug
-    custom_components.bgl_ts_sbg_laketemp: debug
-
 bgl_ts_sbg_laketemp:
   lakes:
-
-    # GKD Bayern: one table per lake. Each lake has its own URL.
-    # The dataset refresh interval is the minimum scan_interval across GKD Bayern lakes.
     - name: Abtsdorfer See
       url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte
       entity_id: abtsdorfer_see_v3
@@ -27,6 +7,20 @@ bgl_ts_sbg_laketemp:
       timeout_hours: 24
       source:
         type: gkd_bayern
+
+    - name: Irrsee
+      entity_id: irrsee_v3
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5005"
+
+    - name: Fuschlsee
+      entity_id: fuschlsee_v3
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Fuschlsee
 
     - name: Königssee
       url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/koenigssee-18624806/messwerte
@@ -40,21 +34,19 @@ bgl_ts_sbg_laketemp:
       source:
         type: gkd_bayern
 
-    # Hydro OOE: shared dataset; one ZRXP download for all configured Hydro OOE lakes.
-    # The dataset refresh interval is the minimum scan_interval across Hydro OOE lakes.
-    - name: Irrsee
-      entity_id: irrsee_v3
-      source:
-        type: hydro_ooe
-        options:
-          station_id: "5005"
-
     - name: Mondsee
       entity_id: mondsee_v3
       source:
         type: hydro_ooe
         options:
           station_id: "5020"
+
+    - name: Wolfgangsee
+      entity_id: wolfgangsee_v3
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Wolfgangsee
 
     - name: Attersee
       entity_id: attersee_v3
@@ -70,22 +62,6 @@ bgl_ts_sbg_laketemp:
         type: hydro_ooe
         options:
           station_id: "4590"
-
-    # Salzburg OGD: shared dataset; one TXT download for all configured Salzburg OGD lakes.
-    # The dataset refresh interval is the minimum scan_interval across Salzburg OGD lakes.
-    - name: Fuschlsee
-      entity_id: fuschlsee_v3
-      source:
-        type: salzburg_ogd
-        options:
-          lake_name: Fuschlsee
-
-    - name: Wolfgangsee
-      entity_id: wolfgangsee_v3
-      source:
-        type: salzburg_ogd
-        options:
-          lake_name: Wolfgangsee
 
     - name: Mattsee
       entity_id: mattsee_v3
@@ -107,3 +83,4 @@ bgl_ts_sbg_laketemp:
         type: salzburg_ogd
         options:
           lake_name: Obertrumer See
+

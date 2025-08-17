@@ -9,6 +9,7 @@ import re
 import voluptuous as vol
 
 DOMAIN: Final[str] = "bgl_ts_sbg_laketemp"
+DATASET_STORE: Final[str] = "datasets"
 
 CONF_LAKES: Final[str] = "lakes"
 CONF_NAME: Final[str] = "name"

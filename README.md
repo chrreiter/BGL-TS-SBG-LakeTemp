@@ -51,7 +51,7 @@ RUN_ONLINE=1 pytest -q -m online
 Notes for online runs
 - You can combine with the clean plugin run if needed:
   - PowerShell: `$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD='1'; $env:RUN_ONLINE='1'; pytest -q -m online`
-- Online tests live in `tests/test_gkd_bayern_online.py` and `tests/test_hydro_ooe_online.py`.
+- Online tests live in `tests/test_gkd_bayern_online.py`, `tests/test_hydro_ooe_online.py`, and `tests/test_salzburg_ogd_online.py`.
 
 ### Example YAML configuration
 
@@ -70,16 +70,19 @@ bgl_ts_sbg_laketemp:
         options:
           table_selector: null
 
+    # Hydro OOE: shared dataset; one ZRXP download for all configured Hydro OOE lakes.
+    # The dataset refresh interval is the minimum scan_interval across Hydro OOE lakes.
     - name: Irrsee / Zell am Moos
-      url: https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7D
+      url: https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7
       entity_id: irrsee_zell
       source:
         type: hydro_ooe
         options:
           station_id: "16579"
 
+    # Salzburg OGD: shared dataset; one TXT download for all configured Salzburg OGD lakes.
+    # The dataset refresh interval is the minimum scan_interval across Salzburg OGD lakes.
     - name: Fuschlsee
-      url: https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt
       entity_id: fuschlsee
       source:
         type: salzburg_ogd
@@ -105,6 +108,8 @@ bgl_ts_sbg_laketemp:
   - **timeout_hours**: Maximum age of the latest reading before the sensor becomes `unknown`. Default: `24`. Allowed range: 1–336 (14 days).
     - Behavior: If the scraped reading timestamp is older than `timeout_hours`, the sensor state is set to `unknown` to avoid showing stale data. Specify it only when overriding the default; in the example it’s shown once for demonstration.
   - **user_agent**: User-Agent header used for HTTP requests. Default: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36`.
+    - Per-lake coordinators (e.g., GKD Bayern): the `user_agent` is applied to that lake’s own HTTP session.
+    - Shared dataset coordinators (Hydro OOE, Salzburg OGD): a single shared HTTP session is created for the dataset using the first registered lake’s `user_agent` (or the default if omitted). Subsequent lakes’ `user_agent` values are ignored for that dataset. If you need all lakes in a dataset to use a specific UA, configure the same `user_agent` on all of them (or ensure the first registered lake sets it).
   - **source**: Data source configuration block. Default: `{ type: gkd_bayern, options: {} }`.
 
 - **source.type** values
@@ -129,3 +134,27 @@ Notes
 ### Behavior change
 
 - Salzburg OGD: The top-level `url` is now informational only. Fetching always uses the official "Hydrografie Seen" TXT dataset endpoint, aligning behavior with Hydro OOE (whose `url` is also informational). Any custom `url` previously set for Salzburg OGD will be ignored for data retrieval.
+
+### How it polls
+
+- Salzburg OGD and Hydro OOE use shared dataset coordinators. All configured lakes for the same source share a single HTTP download per refresh cycle.
+- The effective polling interval for a dataset is the minimum `scan_interval` across its registered lakes. Adjust per-lake `scan_interval` to influence how often the dataset is refreshed.
+- GKD Bayern continues to use a per-lake coordinator (each lake has its own polling).
+
+#### User-Agent behavior for shared datasets
+
+- Shared dataset coordinators use one HTTP session and a single User-Agent string for all lakes in that dataset. The UA is chosen from the first registered lake’s `user_agent` value, falling back to the default if not provided. Changing the `user_agent` on later lakes does not affect the shared session.
+- Future extension: the design allows evolving to per-UA dataset partitions (e.g., coordinator keys of `(dataset_id, user_agent)`) if a use case arises. For now, keep `user_agent` consistent across lakes of the same dataset if you need a specific UA.
+
+Logging
+- INFO when creating dataset coordinators
+- DEBUG on each refresh with bytes downloaded, number of lakes updated, and current minimum `scan_interval`
+- WARNING when a registered lake is missing in the latest dataset snapshot
+- ERROR on HTTP/download/parse failures
+
+### Testing prompts
+
+- Unit tests cover dataset behavior, including shared polling and error handling. Run all tests with `pytest -q` or select online tests:
+  - `tests/test_gkd_bayern_online.py`
+  - `tests/test_hydro_ooe_online.py`
+  - `tests/test_salzburg_ogd_online.py`

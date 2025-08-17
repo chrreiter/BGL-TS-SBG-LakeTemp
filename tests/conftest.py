@@ -184,8 +184,12 @@ import asyncio  # noqa: E402
 
 
 def _run_coroutine(func, kwargs):  # type: ignore[no-untyped-def]
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(func(**kwargs))
+    """Execute a coroutine function with its kwargs using a fresh event loop.
+
+    Using asyncio.run avoids deprecated get_event_loop semantics on Python 3.11+
+    and ensures no reliance on a pre-existing global event loop.
+    """
+    return asyncio.run(func(**kwargs))
 
 
 def pytest_pyfunc_call(pyfuncitem):  # type: ignore[no-untyped-def]
