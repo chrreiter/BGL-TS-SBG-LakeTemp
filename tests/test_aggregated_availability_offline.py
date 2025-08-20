@@ -1,13 +1,9 @@
-from __future__ import annotations
+"""Offline tests for aggregated dataset availability (Hydro OOE).
 
-"""Availability and staleness behavior for aggregated datasets (offline).
-
-- If dataset refresh succeeds but a registered lake is missing in the payload,
-  that lake's sensor should be unavailable (available=False) and state None.
-- When the lake appears again in a subsequent refresh, the sensor becomes available.
+Title: Mixed availability within aggregated dataset — Expect: present lake available, missing lake unavailable; transition logged as WARNING on drop
 """
 
-from datetime import timedelta
+import logging
 from typing import List
 
 import pytest
@@ -17,7 +13,23 @@ from custom_components.bgl_ts_sbg_laketemp.sensor import async_setup_platform
 from custom_components.bgl_ts_sbg_laketemp.const import CONF_LAKES
 
 
-OGD_URL = "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt"
+HYDRO_URL = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+
+
+def _zrxp_block(*, sanr: str, name: str, values: list[tuple[str, float]]) -> str:
+    header = (
+        f"#SANR{sanr}\n"
+        "|*|SNAME "
+        f"{name}|*|\n"
+        "|*|SWATER "
+        f"{name}|*|\n"
+        "|*|CNRWT|*|\n"
+        "#TZUTC+1\n"
+        "#LAYOUT(timestamp,value)\n"
+        "|*|\n"
+    )
+    series = "\n".join(f"{ts} {val}" for ts, val in values)
+    return header + series + "\n"
 
 
 class _EntityList:
@@ -32,68 +44,67 @@ class _EntityList:
 
 
 @pytest.mark.asyncio
-async def test_aggregated_availability_missing_then_present() -> None:  # type: ignore[no-untyped-def]
-    # Title: Missing lake becomes unavailable then available again
+async def test_aggregated_mixed_availability_logs_and_state(caplog) -> None:  # type: ignore[no-untyped-def]
+    # Title: Aggregated mixed availability — Expect: A available, B unavailable, WARNING log emitted for B drop
+    caplog.set_level(logging.DEBUG)
+
+    sanr_a = "12345"
+    sanr_b = "67890"
+    name_a = "Lake A"
+    name_b = "Lake B"
 
     discovery_info = {
         CONF_LAKES: [
             {
-                "name": "Fuschlsee",
-                "url": OGD_URL,
-                "entity_id": "fuschlsee",
-                "scan_interval": 300,
+                "name": name_a,
+                "entity_id": "lake_a",
                 "timeout_hours": 336,
-                "source": {"type": "salzburg_ogd", "options": {"lake_name": "Fuschlsee"}},
+                "source": {"type": "hydro_ooe", "options": {"station_id": sanr_a}},
             },
             {
-                "name": "Mattsee",
-                "url": OGD_URL,
-                "entity_id": "mattsee",
-                "scan_interval": 300,
+                "name": name_b,
+                "entity_id": "lake_b",
                 "timeout_hours": 336,
-                "source": {"type": "salzburg_ogd", "options": {"lake_name": "Mattsee"}},
+                "source": {"type": "hydro_ooe", "options": {"station_id": sanr_b}},
             },
         ]
     }
 
     added = _EntityList()
 
+    # 1) Initial setup + first refresh with both lakes present
+    body_both = (
+        _zrxp_block(sanr=sanr_a, name=name_a, values=[("20250101120000", 5.5), ("20250101130000", 5.6)])
+        + _zrxp_block(sanr=sanr_b, name=name_b, values=[("20250101120000", 7.1), ("20250101130000", 7.2)])
+    )
     with aioresponses() as mocked:
-        # First payload: only Mattsee present
-        payload1 = (
-            "Gewässer;Messdatum;Uhrzeit;Wassertemperatur [°C];Station\n"
-            "Mattsee;2025-08-08;14:05;23,1;Nord\n"
-        )
-        mocked.get(OGD_URL, status=200, body=payload1, headers={"Content-Type": "text/plain; charset=utf-8"})
-
+        mocked.get(HYDRO_URL, status=200, body=body_both, headers={"Content-Type": "text/plain; charset=utf-8"})
         await async_setup_platform(hass={}, config={}, async_add_entities=added, discovery_info=discovery_info)
 
-        assert len(added.entities) == 2
-        fuschl, matt = added.entities
+    assert len(added.entities) == 2
+    s_a, s_b = added.entities
 
-        # Single refresh
-        await fuschl.coordinator.async_refresh()
-        assert fuschl.available is False
-        assert fuschl.native_value is None
-        assert matt.available is True
-        assert matt.native_value == 23.1
+    with aioresponses() as mocked:
+        mocked.get(HYDRO_URL, status=200, body=body_both, headers={"Content-Type": "text/plain; charset=utf-8"})
+        await s_a.coordinator.async_refresh()
 
-        # Cleanup: ensure dataset session is closed
-        if getattr(fuschl, "_dataset_manager", None) is not None:  # type: ignore[attr-defined]
-            await fuschl._dataset_manager.async_close()  # type: ignore[attr-defined]
+    assert s_a.available is True
+    assert s_b.available is True
 
-        # Second payload: both present now
-        payload2 = (
-            "Gewässer;Messdatum;Uhrzeit;Wassertemperatur [°C];Station\n"
-            "Fuschlsee;2025-08-08;14:00;22,4;Westufer\n"
-            "Mattsee;2025-08-08;14:05;23,1;Nord\n"
-        )
-        mocked.get(OGD_URL, status=200, body=payload2, headers={"Content-Type": "text/plain; charset=utf-8"})
+    # 2) Second refresh with only lake A present → lake B becomes unavailable, WARNING logged
+    body_only_a = _zrxp_block(sanr=sanr_a, name=name_a, values=[("20250101140000", 5.7)])
+    with aioresponses() as mocked:
+        mocked.get(HYDRO_URL, status=200, body=body_only_a, headers={"Content-Type": "text/plain; charset=utf-8"})
+        await s_a.coordinator.async_refresh()
 
-        await fuschl.coordinator.async_refresh()
-        assert fuschl.available is True
-        assert fuschl.native_value == 22.4
-        assert matt.available is True
-        assert matt.native_value == 23.1
+    assert s_a.available is True
+    assert s_b.available is False
+
+    # Find warning transition log for lake B
+    warning_found = any(
+        (rec.levelno == logging.WARNING and "transitioned to unavailable" in rec.getMessage() and "Lake B" in rec.getMessage())
+        for rec in caplog.records
+    )
+    assert warning_found, "Expected WARNING transition log for Lake B"
 
 

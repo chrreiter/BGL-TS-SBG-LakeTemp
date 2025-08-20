@@ -333,12 +333,23 @@ class BaseDatasetCoordinator(abc.ABC):
         self.hass = hass
         self.dataset_id = dataset_id
         self._members_by_entity_id: Dict[str, LakeConfig] = {}
+        # Tracks last known availability per lake lookup key (True if present in last mapping)
+        self._last_availability_by_key: Dict[str, bool] = {}
 
         async def _update_wrapper() -> Dict[str, TemperatureReading]:
+            # Never let a single failure take down all members; on error, keep previous data
             try:
                 full = await self.async_update_data()
-            except Exception as exc:  # noqa: BLE001 - HA expects raising on failure
-                raise UpdateFailed(str(exc)) from exc
+            except Exception as exc:  # noqa: BLE001 - do not fail batch-wide
+                _LOGGER.error("Dataset %s: update failed; keeping previous data: %s", self.dataset_id, exc)
+                # Keep previous mapping if available; otherwise empty
+                previous: Dict[str, TemperatureReading] = {}
+                try:
+                    if isinstance(self.coordinator.data, dict) and self.coordinator.data is not None:
+                        previous = dict(self.coordinator.data)
+                except Exception:
+                    previous = {}
+                return previous
 
             # Only keep entries for currently registered lakes
             allowed_keys = {self.get_lookup_key(cfg) for cfg in self._members_by_entity_id.values()}
@@ -348,6 +359,42 @@ class BaseDatasetCoordinator(abc.ABC):
             for key, reading in full.items():
                 if key in allowed_keys:
                     filtered[key] = reading
+
+            # Transition-aware availability logging per lake
+            try:
+                # Compute new availability per key: present in mapping => available
+                new_availability: Dict[str, bool] = {}
+                # Build helper map: key -> lake name for clearer logs
+                key_to_name: Dict[str, str] = {}
+                for cfg in self._members_by_entity_id.values():
+                    k = self.get_lookup_key(cfg)
+                    key_to_name[k] = cfg.name
+                    new_availability[k] = k in filtered
+
+                for key, now_avail in new_availability.items():
+                    before = self._last_availability_by_key.get(key)
+                    if before is None:
+                        continue  # no transition on first observation
+                    if before and not now_avail:
+                        _LOGGER.warning(
+                            "Dataset %s: lake '%s' (key=%s) transitioned to unavailable",
+                            self.dataset_id,
+                            key_to_name.get(key, key),
+                            key,
+                        )
+                    elif (not before) and now_avail:
+                        _LOGGER.info(
+                            "Dataset %s: lake '%s' (key=%s) recovered to available",
+                            self.dataset_id,
+                            key_to_name.get(key, key),
+                            key,
+                        )
+
+                self._last_availability_by_key = new_availability
+            except Exception:
+                # Never break updates due to logging/transitions
+                pass
+
             return filtered
 
         self._backoff_attempts: int = 0

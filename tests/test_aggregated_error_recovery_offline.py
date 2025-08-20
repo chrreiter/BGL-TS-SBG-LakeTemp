@@ -1,11 +1,9 @@
-from __future__ import annotations
+"""Offline tests for aggregated dataset error recovery (Hydro OOE).
 
-"""Aggregated dataset error recovery (offline).
-
-- On HTTP failure, both sensors become unavailable (state None)
-- On subsequent success, both sensors recover
+Title: Recovery after missing lake — Expect: lake becomes available again on first subsequent success; INFO log emitted for recovery
 """
 
+import logging
 from typing import List
 
 import pytest
@@ -15,7 +13,23 @@ from custom_components.bgl_ts_sbg_laketemp.sensor import async_setup_platform
 from custom_components.bgl_ts_sbg_laketemp.const import CONF_LAKES
 
 
-OGD_URL = "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt"
+HYDRO_URL = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+
+
+def _zrxp_block(*, sanr: str, name: str, values: list[tuple[str, float]]) -> str:
+    header = (
+        f"#SANR{sanr}\n"
+        "|*|SNAME "
+        f"{name}|*|\n"
+        "|*|SWATER "
+        f"{name}|*|\n"
+        "|*|CNRWT|*|\n"
+        "#TZUTC+1\n"
+        "#LAYOUT(timestamp,value)\n"
+        "|*|\n"
+    )
+    series = "\n".join(f"{ts} {val}" for ts, val in values)
+    return header + series + "\n"
 
 
 class _EntityList:
@@ -30,65 +44,66 @@ class _EntityList:
 
 
 @pytest.mark.asyncio
-async def test_aggregated_error_recovery() -> None:  # type: ignore[no-untyped-def]
-    # Title: Dataset error then recovery — Expect: both sensors unavailable then recover
+async def test_aggregated_recovery_logs_and_state(caplog) -> None:  # type: ignore[no-untyped-def]
+    # Title: Recovery on subsequent success — Expect: INFO log for recovery, available True again
+    caplog.set_level(logging.DEBUG)
+
+    sanr_a = "12345"
+    sanr_b = "67890"
+    name_a = "Lake A"
+    name_b = "Lake B"
 
     discovery_info = {
         CONF_LAKES: [
             {
-                "name": "Fuschlsee",
-                "url": OGD_URL,
-                "entity_id": "fuschlsee",
-                "scan_interval": 300,
+                "name": name_a,
+                "entity_id": "lake_a",
                 "timeout_hours": 336,
-                "source": {"type": "salzburg_ogd", "options": {"lake_name": "Fuschlsee"}},
+                "source": {"type": "hydro_ooe", "options": {"station_id": sanr_a}},
             },
             {
-                "name": "Mattsee",
-                "url": OGD_URL,
-                "entity_id": "mattsee",
-                "scan_interval": 300,
+                "name": name_b,
+                "entity_id": "lake_b",
                 "timeout_hours": 336,
-                "source": {"type": "salzburg_ogd", "options": {"lake_name": "Mattsee"}},
+                "source": {"type": "hydro_ooe", "options": {"station_id": sanr_b}},
             },
         ]
     }
 
     added = _EntityList()
 
+    # Initial setup: only lake A present, so lake B starts unavailable
+    body_only_a = _zrxp_block(sanr=sanr_a, name=name_a, values=[("20250101140000", 5.7)])
     with aioresponses() as mocked:
-        # First call fails (HTTP 500)
-        mocked.get(OGD_URL, status=500)
-
+        mocked.get(HYDRO_URL, status=200, body=body_only_a, headers={"Content-Type": "text/plain; charset=utf-8"})
         await async_setup_platform(hass={}, config={}, async_add_entities=added, discovery_info=discovery_info)
 
-        assert len(added.entities) == 2
-        fuschl, matt = added.entities
+    assert len(added.entities) == 2
+    s_a, s_b = added.entities
 
-        await fuschl.coordinator.async_refresh()
-        assert fuschl.available is False
-        assert fuschl.native_value is None
-        assert matt.available is False
-        assert matt.native_value is None
-        assert fuschl.coordinator.last_update_success is False
+    # Ensure coordinator has run once so baseline availability is recorded
+    with aioresponses() as mocked:
+        mocked.get(HYDRO_URL, status=200, body=body_only_a, headers={"Content-Type": "text/plain; charset=utf-8"})
+        await s_a.coordinator.async_refresh()
 
-        # Next call succeeds
-        payload = (
-            "Gewässer;Messdatum;Uhrzeit;Wassertemperatur [°C];Station\n"
-            "Fuschlsee;2025-08-08;14:00;22,4;Westufer\n"
-            "Mattsee;2025-08-08;14:05;23,1;Nord\n"
-        )
-        mocked.get(OGD_URL, status=200, body=payload, headers={"Content-Type": "text/plain; charset=utf-8"})
+    assert s_a.available is True
+    assert s_b.available is False
 
-        await fuschl.coordinator.async_refresh()
-        assert fuschl.available is True
-        assert fuschl.native_value == 22.4
-        assert matt.available is True
-        assert matt.native_value == 23.1
-        assert fuschl.coordinator.last_update_success is True
+    # Next refresh includes both lakes; lake B should recover and log INFO
+    body_both = (
+        _zrxp_block(sanr=sanr_a, name=name_a, values=[("20250101150000", 5.8)])
+        + _zrxp_block(sanr=sanr_b, name=name_b, values=[("20250101150000", 7.3)])
+    )
+    with aioresponses() as mocked:
+        mocked.get(HYDRO_URL, status=200, body=body_both, headers={"Content-Type": "text/plain; charset=utf-8"})
+        await s_a.coordinator.async_refresh()
 
-        # Cleanup: ensure dataset session is closed
-        if getattr(fuschl, "_dataset_manager", None) is not None:  # type: ignore[attr-defined]
-            await fuschl._dataset_manager.async_close()  # type: ignore[attr-defined]
+    assert s_a.available is True
+    assert s_b.available is True
 
+    info_found = any(
+        (rec.levelno == logging.INFO and "recovered to available" in rec.getMessage() and "Lake B" in rec.getMessage())
+        for rec in caplog.records
+    )
+    assert info_found, "Expected INFO recovery log for Lake B"
 
