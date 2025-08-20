@@ -141,6 +141,20 @@ Notes
 - The effective polling interval for a dataset is the minimum `scan_interval` across its registered lakes. Adjust per-lake `scan_interval` to influence how often the dataset is refreshed.
 - GKD Bayern continues to use a per-lake coordinator (each lake has its own polling).
 
+#### Rate limiting and connection reuse
+
+- Shared HTTP sessions:
+  - Per‑lake scrapers (e.g., GKD Bayern) reuse a single `aiohttp.ClientSession` across all per‑lake sensors to maximize connection reuse.
+  - Dataset scrapers (Hydro OOE, Salzburg OGD) have one shared `aiohttp.ClientSession` per dataset.
+- Per‑domain rate limiting (client‑side):
+  - Applied to per‑lake requests, keyed by the top‑level domain (e.g., `gkd.bayern.de`).
+  - Defaults: up to 2 concurrent requests per domain, with at least ~250 ms between request start times (no jitter by default).
+  - Purpose: spread out requests to avoid a thundering herd when multiple lakes point to the same domain.
+- Download cardinality by source:
+  - Hydro OOE: one ZRXP bulk file download per refresh cycle, regardless of how many Hydro OOE lakes you track. Adding lakes does not increase the number of HTTP downloads.
+  - Salzburg OGD: one TXT dataset download per refresh cycle, regardless of how many Salzburg OGD lakes you track. Adding lakes does not increase the number of HTTP downloads.
+  - GKD Bayern: one table page download per configured lake per refresh cycle. Each additional GKD lake results in an additional HTTP download. Client‑side rate limiting is per domain; any server‑side rate limits are currently untested/unknown.
+
 #### User-Agent behavior for shared datasets
 
 - Shared dataset coordinators use one HTTP session and a single User-Agent string for all lakes in that dataset. The UA is chosen from the first registered lake’s `user_agent` value, falling back to the default if not provided. Changing the `user_agent` on later lakes does not affect the shared session.

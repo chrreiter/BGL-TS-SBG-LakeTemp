@@ -206,3 +206,15 @@ def pytest_pyfunc_call(pyfuncitem):  # type: ignore[no-untyped-def]
         return True
     return None
 
+
+# Ensure any shared aiohttp session created by the integration is closed after each test
+@pytest.fixture(autouse=True)
+def _cleanup_shared_aiohttp_session():  # type: ignore[no-untyped-def]
+    yield
+    try:
+        # Close the shared session stored in the dataset store if present
+        from custom_components.bgl_ts_sbg_laketemp.dataset_coordinators import _close_shared_session_on_stop
+        import asyncio as _asyncio
+        _asyncio.run(_close_shared_session_on_stop({}))
+    except Exception:
+        pass

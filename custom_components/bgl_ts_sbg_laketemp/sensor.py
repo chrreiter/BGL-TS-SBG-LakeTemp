@@ -45,6 +45,8 @@ from .dataset_coordinators import (
     get_or_create_dataset_manager,
     SalzburgOGDDatasetCoordinator,
     HydroOoeDatasetCoordinator,
+    get_shared_client_session,
+    get_domain_rate_limiter,
 )
 
 
@@ -79,7 +81,22 @@ async def async_setup_platform(
             validated = LAKE_SCHEMA(raw)
             lake_cfg = build_lake_config(validated)
         except Exception as exc:  # noqa: BLE001 - surface clear context in logs
-            _LOGGER.error("Invalid lake configuration at index %s: %s", idx, exc, exc_info=True)
+            try:
+                name = raw.get(CONF_NAME)
+                source_type = None
+                if isinstance(raw.get(CONF_SOURCE), dict):
+                    source_type = raw[CONF_SOURCE].get("type")
+            except Exception:
+                name = None
+                source_type = None
+            _LOGGER.error(
+                "Invalid lake configuration at index %s (name=%r, source=%r): %s",
+                idx,
+                name,
+                source_type,
+                exc,
+                exc_info=True,
+            )
             continue
 
         try:
@@ -212,15 +229,18 @@ class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
             return sensor
 
         # Per-lake coordinator: GKD and others
-        timeout = aiohttp.ClientTimeout(total=20)
-        headers = {"User-Agent": lake_config.user_agent or DEFAULT_USER_AGENT}
-        session = aiohttp.ClientSession(headers=headers, timeout=timeout)
+        # Reuse a single shared session across all per-lake sensors
+        session = get_shared_client_session(hass, user_agent=lake_config.user_agent or DEFAULT_USER_AGENT, request_timeout_seconds=20.0)
 
         data_source = create_data_source(lake_config, session=session)
 
         async def _async_update_data() -> TemperatureReading | None:
             try:
-                reading = await data_source.fetch_temperature()
+                # Apply per-domain rate limiting if a URL is available
+                limiter = get_domain_rate_limiter(hass)
+                url = lake_config.url or ""
+                async with await limiter.acquire_for(url):
+                    reading = await data_source.fetch_temperature()
             except Exception as exc:  # noqa: BLE001 - HA expects exceptions for UpdateFailed
                 raise UpdateFailed(str(exc)) from exc
             return reading
@@ -299,6 +319,14 @@ class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
             "url": self._lake.url,
             ATTR_ATTRIBUTION: "Data courtesy of public hydrology portals",
         }
+        # Surface SANR for Hydro OOE dataset if available
+        try:
+            if isinstance(self._dataset_manager, HydroOoeDatasetCoordinator):
+                sanr = self._dataset_manager.get_last_sanr_for_entity(self._lake.entity_id)  # type: ignore[attr-defined]
+                if sanr:
+                    attrs["sanr"] = sanr
+        except Exception:
+            pass
         if reading is not None:
             try:
                 ts = reading.timestamp
@@ -324,8 +352,8 @@ class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
             if self._data_source is not None:
                 await self._data_source.close()
         finally:
-            if self._session is not None and not self._session.closed:
-                await self._session.close()
+            # Session is shared at integration level; do not close here
+            pass
 
     async def async_added_to_hass(self) -> None:
         """Perform an initial refresh after the entity is added to Home Assistant."""

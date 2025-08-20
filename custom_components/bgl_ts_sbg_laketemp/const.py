@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 import re
 import voluptuous as vol
+from urllib.parse import urlparse
 
 DOMAIN: Final[str] = "bgl_ts_sbg_laketemp"
 DATASET_STORE: Final[str] = "datasets"
@@ -32,6 +33,12 @@ DEFAULT_USER_AGENT: Final[str] = (
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 )
 
+# Validation bounds
+MIN_SCAN_INTERVAL_SECONDS: Final[int] = 15
+MAX_SCAN_INTERVAL_SECONDS: Final[int] = 24 * 60 * 60  # 1 day
+MIN_TIMEOUT_HOURS: Final[int] = 1
+MAX_TIMEOUT_HOURS: Final[int] = 24 * 14  # 14 days
+
 
 def _is_http_url(value: str) -> str:
     if not isinstance(value, str):
@@ -42,6 +49,19 @@ def _is_http_url(value: str) -> str:
     if " " in value:
         raise vol.Invalid("Invalid URL: must not contain spaces")
     return value
+
+
+def _optional_http_url(value: Any) -> str | None:
+    """Allow None or a valid http(s) URL with clear error messages.
+
+    This wrapper avoids ``vol.Any`` swallowing detailed error strings from
+    ``_is_http_url`` and guarantees actionable messages in test assertions.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise vol.Invalid("Invalid URL: expected a string or null")
+    return _is_http_url(value)
 
 
 _ENTITY_ID_SLUG_RE: Final[re.Pattern[str]] = re.compile(r"^[a-z0-9_]{1,64}$")
@@ -61,16 +81,20 @@ def _is_entity_id_slug(value: str) -> str:
 def _hours(value: int) -> int:
     if not isinstance(value, int):
         raise vol.Invalid("Invalid timeout_hours: expected integer hours")
-    if value < 1 or value > 24 * 14:
-        raise vol.Invalid("Invalid timeout_hours: must be between 1 and 336 hours (14 days)")
+    if value < MIN_TIMEOUT_HOURS or value > MAX_TIMEOUT_HOURS:
+        raise vol.Invalid(
+            f"Invalid timeout_hours: must be between {MIN_TIMEOUT_HOURS} and {MAX_TIMEOUT_HOURS} hours (max 14 days)"
+        )
     return value
 
 
 def _scan_seconds(value: int) -> int:
     if not isinstance(value, int):
         raise vol.Invalid("Invalid scan_interval: expected integer seconds")
-    if value < 60 or value > 24 * 60 * 60:
-        raise vol.Invalid("Invalid scan_interval: must be between 60 and 86400 seconds")
+    if value < MIN_SCAN_INTERVAL_SECONDS or value > MAX_SCAN_INTERVAL_SECONDS:
+        raise vol.Invalid(
+            f"Invalid scan_interval: must be between {MIN_SCAN_INTERVAL_SECONDS} and {MAX_SCAN_INTERVAL_SECONDS} seconds"
+        )
     return value
 
 
@@ -184,6 +208,12 @@ def _validate_source_block(value: MutableMapping[str, Any]) -> Dict[str, Any]:
         lake_name = options_in.get("lake_name")
         if lake_name is not None and not isinstance(lake_name, str):
             raise vol.Invalid("Invalid source.options.lake_name: expected string")
+        # Deprecation: any attempt to provide a custom OGD URL via options is rejected
+        for deprecated_key in ("url", "custom_url", "ogd_url"):
+            if deprecated_key in options_in:
+                raise vol.Invalid(
+                    f"Invalid source.options.{deprecated_key}: deprecated for 'salzburg_ogd'; remove this option"
+                )
 
     return {CONF_SOURCE_TYPE: source_type.value, CONF_SOURCE_OPTIONS: options_in}
 
@@ -210,8 +240,20 @@ def _enforce_url_requirement_by_source(value: MutableMapping[str, Any]) -> Dict[
         if not isinstance(url_val, str) or not url_val:
             raise vol.Invalid("'url' is required for source types gkd_bayern and generic_html")
     else:
-        # For hydro_ooe and salzburg_ogd allow None or missing
-        pass
+        # For hydro_ooe and salzburg_ogd allow None or missing.
+        # If provided, validate strictly and surface clear, actionable messages.
+        if url_val:
+            # Enforce http(s) and no spaces first
+            _ = _is_http_url(url_val)
+            # Then ensure a host is present
+            try:
+                parsed = urlparse(url_val)
+                if not parsed.netloc:
+                    raise vol.Invalid("Invalid url: malformed URL (missing host)")
+            except vol.Invalid:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                raise vol.Invalid(f"Invalid url: {exc}")
 
     return value  # unchanged mapping
 
@@ -219,8 +261,9 @@ def _enforce_url_requirement_by_source(value: MutableMapping[str, Any]) -> Dict[
 _LAKE_FIELDS_SCHEMA: Final = vol.Schema(
     {
         vol.Required(CONF_NAME): vol.All(str, vol.Length(min=1, max=100)),
-        vol.Optional(CONF_URL, default=None): vol.Any(None, _is_http_url),
+        vol.Optional(CONF_URL, default=None): _optional_http_url,
         vol.Required(CONF_ENTITY_ID): _is_entity_id_slug,
+        # Enforce integers without coercion and clear range bounds
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL_SECONDS): _scan_seconds,
         vol.Optional(CONF_TIMEOUT_HOURS, default=DEFAULT_TIMEOUT_HOURS): _hours,
         vol.Optional(CONF_USER_AGENT, default=DEFAULT_USER_AGENT): vol.All(

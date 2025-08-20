@@ -20,9 +20,9 @@ ZRXP_URL = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
 
 @pytest.mark.asyncio
 async def test_hydro_ooe_name_hint_selects_and_returns_latest() -> None:
-    # No SANR provided; rely on the lake name as a name hint containing tokens
+    # Title: Exact name-hint selects series — Expect: latest value returned
     raw = {
-        "name": "Irrsee / Zell am Moos",  # provides tokens for SNAME/SWATER matching
+        "name": "Zell am Moos",  # exact SNAME
         "url": ZRXP_URL,
         "entity_id": "irrsee_zell_hint",
         "source": {"type": "hydro_ooe", "options": {}},

@@ -1,0 +1,62 @@
+bgl_ts_sbg_laketemp:
+  lakes:
+
+    # Salzburg OGD lakes (alphabetical by Gewässer)
+
+    # Station number: 203653
+    - name: Fuschlsee
+      entity_id: fuschlsee_203653
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Fuschlsee
+
+    # Station number: 204131
+    - name: Grabensee
+      entity_id: grabensee_204131
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Grabensee
+
+    # Station number: 203604
+    - name: Mattsee
+      entity_id: mattsee_203604
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Mattsee
+
+    # Station number: 203612
+    - name: Obertrumer See
+      entity_id: obertrumer_see_203612
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Obertrumer See
+
+    # Station number: 203588
+    - name: Wallersee
+      entity_id: wallersee_203588
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Wallersee
+
+    # Station number: 203646
+    - name: Wolfgangsee
+      entity_id: wolfgangsee_203646
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Wolfgangsee
+
+    # Station number: 203117
+    - name: Zeller See
+      entity_id: zeller_see_203117
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Zeller See
+
+

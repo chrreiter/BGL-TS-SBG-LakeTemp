@@ -29,12 +29,16 @@ User-Agent behavior
   to maintain separate shared sessions per UA.
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
+import asyncio
+import random
+from urllib.parse import urlparse
 import abc
 import logging
 from typing import Callable, Dict, Iterable, Mapping, MutableMapping, Tuple
 
 import aiohttp
+from aiohttp import TooManyRedirects
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import (
@@ -64,6 +68,214 @@ _LOGGER = logging.getLogger(__name__)
 
 
 DATASETS_KEY = "datasets"
+
+
+# ---- Domain-level rate limiting ----
+
+class _DomainState:
+    """Internal state for a single domain's rate limits.
+
+    Enforces a maximum number of concurrent in-flight requests and a minimum
+    spacing between request start times (with optional jitter) to avoid
+    thundering herd effects.
+    """
+
+    def __init__(self, *, max_concurrent: int, min_delay_seconds: float, jitter_seconds: float) -> None:
+        # Guard rails
+        max_concurrent = max(1, int(max_concurrent))
+        min_delay_seconds = max(0.0, float(min_delay_seconds))
+        jitter_seconds = max(0.0, float(jitter_seconds))
+
+        self.semaphore = asyncio.Semaphore(max_concurrent)
+        self.min_delay_seconds = min_delay_seconds
+        self.jitter_seconds = jitter_seconds
+        self._lock = asyncio.Lock()
+        self._next_earliest_start: float = 0.0
+
+    async def acquire(self) -> None:
+        # Cap concurrency first
+        await self.semaphore.acquire()
+        # Then serialize spacing between starts
+        async with self._lock:
+            now = asyncio.get_event_loop().time()
+            earliest = max(now, self._next_earliest_start)
+            delay = max(0.0, earliest - now)
+            if delay > 0:
+                await asyncio.sleep(delay)
+            # Compute next earliest start including min spacing and optional jitter
+            jitter = random.uniform(0.0, self.jitter_seconds) if self.jitter_seconds > 0 else 0.0
+            self._next_earliest_start = max(earliest, asyncio.get_event_loop().time()) + self.min_delay_seconds + jitter
+
+    def release(self) -> None:
+        try:
+            self.semaphore.release()
+        except ValueError:
+            # Defensive: ignore double-release in case of misuse
+            pass
+
+
+class DomainRateLimiter:
+    """A simple async per-domain rate limiter.
+
+    Use as:
+        limiter = get_domain_rate_limiter(hass)
+        async with limiter.acquire_for("https://example.com/path"):
+            ...
+    """
+
+    def __init__(self, *, max_concurrent: int = 2, min_delay_seconds: float = 0.25, jitter_seconds: float = 0.0) -> None:
+        self._states: dict[str, _DomainState] = {}
+        self._defaults = (max(1, int(max_concurrent)), max(0.0, float(min_delay_seconds)), max(0.0, float(jitter_seconds)))
+        self._lock = asyncio.Lock()
+
+    def _normalize_domain(self, target: str) -> str:
+        try:
+            parsed = urlparse(target)
+            if parsed.scheme and parsed.netloc:
+                return parsed.netloc.lower()
+        except Exception:
+            pass
+        return (target or "").strip().lower()
+
+    async def _get_state(self, domain: str) -> _DomainState:
+        async with self._lock:
+            state = self._states.get(domain)
+            if state is None:
+                mc, md, jit = self._defaults
+                state = _DomainState(max_concurrent=mc, min_delay_seconds=md, jitter_seconds=jit)
+                self._states[domain] = state
+            return state
+
+    class _Guard:
+        def __init__(self, state: _DomainState) -> None:
+            self._state = state
+
+        async def __aenter__(self):  # noqa: ANN001 - context manager protocol
+            await self._state.acquire()
+
+        async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
+            self._state.release()
+
+    async def acquire_for(self, target: str):  # noqa: ANN201 - returns async context manager
+        domain = self._normalize_domain(target)
+        state = await self._get_state(domain)
+        return DomainRateLimiter._Guard(state)
+
+
+def get_domain_rate_limiter(
+    hass: HomeAssistant,
+    *,
+    max_concurrent: int | None = None,
+    min_delay_seconds: float | None = None,
+    jitter_seconds: float | None = None,
+) -> DomainRateLimiter:
+    """Return a singleton domain rate limiter stored under hass.data.
+
+    Optional parameters are only used on first creation.
+    """
+    store = _get_dataset_store(hass)
+    key = "_domain_rate_limiter"
+    existing = store.get(key)
+    if isinstance(existing, DomainRateLimiter):
+        return existing
+    limiter = DomainRateLimiter(
+        max_concurrent=max_concurrent or 2,
+        min_delay_seconds=min_delay_seconds or 0.25,
+        jitter_seconds=jitter_seconds or 0.0,
+    )
+    store[key] = limiter  # type: ignore[assignment]
+    return limiter
+
+
+# Global fallback limiter for scrapers outside HA context
+_GLOBAL_LIMITER: DomainRateLimiter | None = None
+
+
+def get_global_domain_rate_limiter(
+    *,
+    max_concurrent: int | None = None,
+    min_delay_seconds: float | None = None,
+    jitter_seconds: float | None = None,
+) -> DomainRateLimiter:
+    global _GLOBAL_LIMITER
+    if _GLOBAL_LIMITER is None:
+        _GLOBAL_LIMITER = DomainRateLimiter(
+            max_concurrent=max_concurrent or 2,
+            min_delay_seconds=min_delay_seconds or 0.25,
+            jitter_seconds=jitter_seconds or 0.0,
+        )
+    return _GLOBAL_LIMITER
+
+
+# ---- Shared aiohttp session for per-lake sensors ----
+
+_GLOBAL_SHARED_SESSION: aiohttp.ClientSession | None = None
+
+async def _close_shared_session_on_stop(hass: HomeAssistant) -> None:
+    try:
+        store = _get_dataset_store(hass)
+        sess = store.get("_shared_session")
+        if isinstance(sess, aiohttp.ClientSession) and not sess.closed:
+            await sess.close()
+        store["_shared_session"] = None  # type: ignore[index]
+    except Exception:
+        pass
+    # Also close global fallback session if present
+    try:
+        global _GLOBAL_SHARED_SESSION
+        if _GLOBAL_SHARED_SESSION is not None and not _GLOBAL_SHARED_SESSION.closed:
+            await _GLOBAL_SHARED_SESSION.close()
+        _GLOBAL_SHARED_SESSION = None
+    except Exception:
+        pass
+
+
+def get_shared_client_session(
+    hass: HomeAssistant,
+    *,
+    user_agent: str | None = None,
+    request_timeout_seconds: float = 20.0,
+) -> aiohttp.ClientSession:
+    """Return a single shared ClientSession for the integration.
+
+    The first caller defines the User-Agent header; subsequent callers reuse the
+    session regardless of User-Agent to maximize connection reuse.
+    """
+    store = _get_dataset_store(hass)
+    existing = store.get("_shared_session")
+    if isinstance(existing, aiohttp.ClientSession) and not existing.closed:
+        return existing
+
+    timeout = aiohttp.ClientTimeout(total=request_timeout_seconds)
+    headers = {"User-Agent": user_agent or DEFAULT_USER_AGENT}
+    session = aiohttp.ClientSession(headers=headers, timeout=timeout)
+    store["_shared_session"] = session  # type: ignore[index]
+    store["_shared_session_ua"] = headers["User-Agent"]  # type: ignore[index]
+    # Save in global fallback so tests/contexts without consistent hass can close it
+    global _GLOBAL_SHARED_SESSION
+    _GLOBAL_SHARED_SESSION = session
+
+    # Register best-effort shutdown hook in real HA
+    try:
+        bus = getattr(hass, "bus", None)
+        if bus is not None and hasattr(bus, "async_listen_once"):
+            async def _on_stop(_event) -> None:  # type: ignore[no-untyped-def]
+                try:
+                    create_task = getattr(hass, "async_create_task", None)
+                    if callable(create_task):
+                        create_task(_close_shared_session_on_stop(hass))
+                    else:
+                        loop = getattr(hass, "loop", None)
+                        if loop is not None:
+                            loop.create_task(_close_shared_session_on_stop(hass))
+                except Exception:
+                    pass
+
+            bus.async_listen_once("homeassistant_stop", _on_stop)
+    except Exception:
+        pass
+
+    return session
 
 
 def _get_dataset_store(hass: HomeAssistant) -> MutableMapping[str, "BaseDatasetCoordinator"]:
@@ -138,6 +350,9 @@ class BaseDatasetCoordinator(abc.ABC):
                     filtered[key] = reading
             return filtered
 
+        self._backoff_attempts: int = 0
+        self._backoff_override_seconds: int | None = None
+
         self.coordinator: DataUpdateCoordinator[Dict[str, TemperatureReading]] = DataUpdateCoordinator(
             hass,
             _LOGGER,
@@ -190,10 +405,14 @@ class BaseDatasetCoordinator(abc.ABC):
         If there are no members, fall back to :data:`DEFAULT_SCAN_INTERVAL_SECONDS`.
         """
 
-        if not self._members_by_entity_id:
-            seconds = DEFAULT_SCAN_INTERVAL_SECONDS
+        if self._backoff_override_seconds is not None:
+            # Respect active backoff / retry-after override
+            seconds = int(self._backoff_override_seconds)
         else:
-            seconds = min(cfg.scan_interval for cfg in self._members_by_entity_id.values())
+            if not self._members_by_entity_id:
+                seconds = DEFAULT_SCAN_INTERVAL_SECONDS
+            else:
+                seconds = min(cfg.scan_interval for cfg in self._members_by_entity_id.values())
         self.coordinator.update_interval = timedelta(seconds=seconds)
         _LOGGER.debug(
             "Dataset %s: update_interval set to %ss (members=%d)",
@@ -355,6 +574,11 @@ class SalzburgOGDDatasetCoordinator(BaseDatasetCoordinator):
             async with SalzburgOGDScraper(session=self._session, user_agent=self._ua or DEFAULT_USER_AGENT) as scraper:
                 records = await scraper.fetch_all_latest(target_lakes=target_lakes)
                 bytes_downloaded = scraper.last_bytes_downloaded
+            # Success clears backoff
+            self._backoff_attempts = 0
+            self._backoff_override_seconds = None
+            # After clearing backoff, recompute to reflect configured scan intervals
+            self.recompute_update_interval()
         except Exception as exc:  # noqa: BLE001
             _LOGGER.error("SalzburgOGD refresh failed: %s", exc)
             raise
@@ -415,6 +639,8 @@ class HydroOoeDatasetCoordinator(BaseDatasetCoordinator):
         # Per-lake selection info
         self._sanr_by_entity_id: Dict[str, str | None] = {}
         self._name_hint_by_entity_id: Dict[str, str | None] = {}
+        # Tracks the last matched SANR for each registered lake after a refresh
+        self._last_sanr_by_entity_id: Dict[str, str | None] = {}
         _LOGGER.info("Initialized HydroOOE dataset coordinator (dataset_id=%s)", self.dataset_id)
 
         # Best-effort: close shared session on Home Assistant shutdown (real HA only)
@@ -464,6 +690,7 @@ class HydroOoeDatasetCoordinator(BaseDatasetCoordinator):
         """Unregister a lake and best-effort close the shared session if unused."""
         self._sanr_by_entity_id.pop(entity_id, None)
         self._name_hint_by_entity_id.pop(entity_id, None)
+        self._last_sanr_by_entity_id.pop(entity_id, None)
         super().unregister_lake(entity_id)
         if not self._members_by_entity_id and self._session is not None:
             try:
@@ -507,16 +734,51 @@ class HydroOoeDatasetCoordinator(BaseDatasetCoordinator):
 
         # Fetch file
         bytes_downloaded: int = 0
-        # Use the shared session for the dataset GET
+        url = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
         try:
             assert self._session is not None
-            async with self._session.get("https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp") as resp:
+            async with self._session.get(url, max_redirects=5) as resp:
+                # Handle HTTP status cases explicitly
+                if resp.status == 404:
+                    _LOGGER.warning("HydroOOE dataset returned 404 (not found); skipping update this cycle")
+                    # Do not mark failure, keep previous data; apply a small backoff to avoid hot-looping
+                    self._apply_backoff(base_seconds=self._current_min_scan_interval_seconds(), factor=1.2, cap_seconds=1800)
+                    # Raise sentinel to indicate no-op update
+                    raise _SkipUpdate()
+                if resp.status == 429:
+                    retry_after = resp.headers.get("Retry-After")
+                    seconds = _parse_retry_after_seconds(retry_after)
+                    if seconds is None:
+                        # Default conservative retry of 300s
+                        seconds = 300
+                    _LOGGER.warning("HydroOOE dataset 429 Too Many Requests; respecting Retry-After=%ss", seconds)
+                    self._apply_retry_after(seconds)
+                    raise _SkipUpdate()
+                if 500 <= resp.status < 600:
+                    # Server error: mark failure and apply exponential backoff
+                    _LOGGER.error("HydroOOE dataset server error: HTTP %s", resp.status)
+                    self._apply_backoff(base_seconds=self._current_min_scan_interval_seconds())
+                    resp.raise_for_status()
+
+                # Normal success path
                 resp.raise_for_status()
                 raw = await resp.read()
                 bytes_downloaded = len(raw)
                 text = raw.decode(resp.charset or "utf-8", errors="replace")
+            # Success: clear backoff and recompute schedule
+            self._backoff_attempts = 0
+            self._backoff_override_seconds = None
+            self.recompute_update_interval()
+        except _SkipUpdate:
+            # Keep previous data unchanged by returning the current coordinator data
+            return dict(self.coordinator.data or {})
+        except TooManyRedirects as exc:
+            _LOGGER.error("HydroOOE dataset exceeded redirect limit: %s", exc)
+            self._apply_backoff(base_seconds=self._current_min_scan_interval_seconds())
+            raise
         except Exception as exc:  # noqa: BLE001
             _LOGGER.error("HydroOOE refresh failed during download: %s", exc)
+            self._apply_backoff(base_seconds=self._current_min_scan_interval_seconds())
             raise
 
         blocks = split_zrxp_blocks(text)
@@ -541,6 +803,15 @@ class HydroOoeDatasetCoordinator(BaseDatasetCoordinator):
             except Exception:  # noqa: BLE001
                 _LOGGER.error("HydroOOE parse failed for lake=%s (sanr=%s)", cfg.name, sanr or "-")
                 continue
+
+            # Extract SANR from the selected block and remember it
+            try:
+                import re as _re
+                m = _re.search(r"#SANR(\d+)", block)
+                matched_sanr = m.group(1) if m else None
+                self._last_sanr_by_entity_id[entity_id] = matched_sanr
+            except Exception:
+                self._last_sanr_by_entity_id[entity_id] = None
 
             # Build stable key: SANR if known, else normalized name
             key = sanr if (sanr and sanr.isdigit()) else self.get_lookup_key(cfg)
@@ -583,9 +854,61 @@ class HydroOoeDatasetCoordinator(BaseDatasetCoordinator):
 
         return result
 
+    # ---- Scheduling helpers ----
+    def _current_min_scan_interval_seconds(self) -> int:
+        if not self._members_by_entity_id:
+            return DEFAULT_SCAN_INTERVAL_SECONDS
+        return min(cfg.scan_interval for cfg in self._members_by_entity_id.values())
+
+    def _apply_backoff(self, *, base_seconds: int, factor: float = 2.0, cap_seconds: int = 3600) -> None:
+        """Apply exponential backoff to coordinator scheduling.
+
+        Increases attempts counter and sets an override update_interval derived
+        from the current minimum scan interval.
+        """
+        try:
+            self._backoff_attempts = min(self._backoff_attempts + 1, 8)
+            next_seconds = int(min(cap_seconds, base_seconds * (factor ** self._backoff_attempts)))
+            self._backoff_override_seconds = max(base_seconds, next_seconds)
+            self.coordinator.update_interval = timedelta(seconds=self._backoff_override_seconds)
+            _LOGGER.debug(
+                "Dataset %s: applied backoff (attempts=%d, update_interval=%ss)",
+                self.dataset_id,
+                self._backoff_attempts,
+                self._backoff_override_seconds,
+            )
+        except Exception:
+            # Never raise from scheduling tweaks
+            pass
+
+    def _apply_retry_after(self, seconds: int) -> None:
+        """Set coordinator scheduling to respect a Retry-After delay."""
+        try:
+            self._backoff_override_seconds = max(1, int(seconds))
+            self.coordinator.update_interval = timedelta(seconds=self._backoff_override_seconds)
+            _LOGGER.debug(
+                "Dataset %s: applied Retry-After override (update_interval=%ss)",
+                self.dataset_id,
+                self._backoff_override_seconds,
+            )
+        except Exception:
+            pass
+
+    # ---- Introspection helpers for sensors ----
+    def get_last_sanr_for_entity(self, entity_id: str) -> str | None:
+        """Return the last matched SANR for a registered lake, if known.
+
+        This reflects the SANR parsed from the most recent successful selection
+        during :meth:`async_update_data`. It may be ``None`` if no selection has
+        been made yet or the match could not be determined.
+        """
+        return self._last_sanr_by_entity_id.get(entity_id)
+
 
 __all__ = [
     "BaseDatasetCoordinator",
+    "DomainRateLimiter",
+    "get_domain_rate_limiter",
     "get_dataset_manager",
     "get_or_create_dataset_manager",
     "get_or_create_salzburg_coordinator",
@@ -594,5 +917,41 @@ __all__ = [
     "HydroOoeDatasetCoordinator",
     "DATASETS_KEY",
 ]
+
+
+# ---- Internal helpers ----
+
+class _SkipUpdate(Exception):
+    """Internal sentinel to indicate skipping update without failure."""
+
+
+def _parse_retry_after_seconds(header_value: str | None) -> int | None:
+    """Parse Retry-After header which may be seconds or HTTP-date.
+
+    Returns seconds until retry if parseable; otherwise None.
+    """
+    if not header_value:
+        return None
+    try:
+        # First try integer seconds
+        sec = int(header_value.strip())
+        if sec >= 0:
+            return sec
+    except Exception:
+        pass
+    # Try HTTP-date formats
+    try:
+        import email.utils as eut
+
+        dt = eut.parsedate_to_datetime(header_value)
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        delta = int((dt - now).total_seconds())
+        return max(0, delta)
+    except Exception:
+        return None
 
 

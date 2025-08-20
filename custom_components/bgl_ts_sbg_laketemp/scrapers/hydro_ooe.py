@@ -82,103 +82,90 @@ def split_zrxp_blocks(text: str) -> list[str]:
 
 
 def select_block(blocks: list[str], *, sanr: str | None, name_hint: str | None) -> Optional[str]:
-    """Select the best matching ZRXP station block by SANR or name hint.
+    """Select a ZRXP station block by SANR or exact name.
 
-    Priority:
-    - Exact SANR match when provided, preferring water temperature parameter (WT)
-    - Otherwise fuzzy token matching against SNAME and SWATER using name_hint
+    Rules:
+    - If ``sanr`` is provided (numeric), select strictly by that SANR.
+      If multiple blocks with the same SANR exist, prefer parameter CNRWT
+      (water temperature). If none found, raise :class:`NoDataError`.
+    - Else, if ``name_hint`` is provided, perform a case-insensitive exact
+      match against SNAME and SWATER. If blocks from multiple different SANR
+      match, raise an ambiguity :class:`NoDataError` listing candidates. If the
+      match is unique for a single SANR but multiple parameter blocks exist,
+      prefer CNRWT. If no block matches exactly, return ``None``.
 
     Args:
-        blocks: List of station blocks from the ZRXP export.
-        sanr: Desired station number (numeric string) if known.
-        name_hint: Optional station/lake name hint used for fuzzy matching.
+        blocks: ZRXP station blocks.
+        sanr: Station id (SANR) to match.
+        name_hint: Exact name to match (case-insensitive) for SNAME/SWATER.
 
     Returns:
-        Optional[str]: The selected block text, or None if no match is found.
+        Optional[str]: Selected block text. May be ``None`` when neither
+        SANR nor name produced a match.
     """
     with log_operation(_LOGGER, component="scraper.hydro_ooe", operation="select_block") as op:
         sanr_target: Optional[str] = sanr if (sanr and sanr.isdigit()) else None
-        sname_target = name_hint.strip() if name_hint else None
-        sname_tokens: list[str] = []
-        if sname_target:
-            sname_tokens = [t.strip() for t in re.split(r"[\s/,;|()-]+", sname_target) if len(t.strip()) >= 3]
+        name_target = name_hint.strip() if name_hint else None
 
-        # 1) SANR-based selection with parameter preference (WT)
+        # 1) SANR-based strict selection with WT preference
         if sanr_target:
-            best_block: Optional[str] = None
-            best_score: int = -10
-            best_param: Optional[str] = None
+            matches: list[tuple[str, str]] = []  # (param_code, block)
             for block in blocks:
-                sanr_match = re.search(r"#SANR(\d+)", block)
-                sanr_val = sanr_match.group(1) if sanr_match else None
-                if sanr_val != sanr_target:
+                m = re.search(r"#SANR(\d+)", block)
+                if not m or m.group(1) != sanr_target:
                     continue
-
-                # Infer parameter (e.g., CNRWT / CNAME=Wassertemperatur)
                 param_code_match = re.search(r"\|\*\|CNR([A-Za-z0-9]+)\|\*\|", block)
-                param_code = param_code_match.group(1).upper() if param_code_match else None
-                param_name_match = re.search(r"\|\*\|CNAME([^|]*)\|\*\|", block)
-                param_name = param_name_match.group(1).strip().lower() if param_name_match else ""
+                param_code = (param_code_match.group(1).upper() if param_code_match else "")
+                matches.append((param_code, block))
 
-                score = 0
-                if param_code == "WT":
-                    score += 100
-                elif "wasser" in param_name and "temperatur" in param_name:
-                    score += 90
-                if "temperatur" in param_name:
-                    score += 2
+            if not matches:
+                op.set(match_type="sanr_not_found", sanr=sanr_target)
+                raise NoDataError(f"No station found for SANR={sanr_target}")
 
-                if score > best_score:
-                    best_score = score
-                    best_block = block
-                    best_param = param_code or None
-
-            if best_block is not None:
-                op.set(match_type="sanr", sanr=sanr_target, parameter=best_param or "unknown")
-                return best_block
-
-        # 2) Name-based selection with additional preference for WT
-        chosen: Optional[str] = None
-        best_score: int = -1
-        for block in blocks:
-            sname_match = re.search(r"\|\*\|SNAME([^|]*)\|\*\|", block)
-            swater_match = re.search(r"\|\*\|SWATER([^|]*)\|\*\|", block)
-            sname_val = sname_match.group(1).strip() if sname_match else None
-            swater_val = swater_match.group(1).strip() if swater_match else None
-
-            if sname_tokens:
-                cand_fields = [s for s in [sname_val, swater_val] if s]
-                cand_lower = [c.lower() for c in cand_fields]
-                score = 0
-                for tok in sname_tokens:
-                    tl = tok.lower()
-                    if any(tl in c for c in cand_lower):
-                        score += 1
-                if re.search(r"\|\*\|CNRWT\|\*\|", block):
-                    score += 3
-                elif re.search(r"\|\*\|CNAME([^|]*)\|\*\|", block):
-                    pname = re.search(r"\|\*\|CNAME([^|]*)\|\*\|", block).group(1).strip().lower()  # type: ignore[union-attr]
-                    if "wasser" in pname and "temperatur" in pname:
-                        score += 2
-
-                if score > best_score:
-                    best_score = score
-                    chosen = block
-            elif sname_target:
-                cand_fields = [s for s in [sname_val, swater_val] if s]
-                if any(sname_target.lower() in f.lower() for f in cand_fields):
-                    if best_score < 0:
-                        chosen = block
-
-        if sname_target and chosen is not None:
-            op.set(match_type="sname_contains", query=sname_target)
+            # Prefer WT if present
+            wt = [b for p, b in matches if p == "WT"]
+            chosen = wt[0] if wt else matches[0][1]
+            op.set(match_type="sanr", sanr=sanr_target, parameter=("WT" if wt else matches[0][0] or "unknown"))
             return chosen
 
-        if sanr_target:
-            op.set(match_type="sanr_not_found", sanr=sanr_target)
-        else:
-            op.set(match_type="none")
-        return chosen
+        # 2) Name-based exact matching
+        if name_target:
+            name_lc = name_target.lower()
+            # Group matches by SANR
+            grouped: dict[str, list[str]] = {}
+            for block in blocks:
+                sname_match = re.search(r"\|\*\|SNAME([^|]*)\|\*\|", block)
+                swater_match = re.search(r"\|\*\|SWATER([^|]*)\|\*\|", block)
+                sname_val = (sname_match.group(1).strip() if sname_match else "").lower()
+                swater_val = (swater_match.group(1).strip() if swater_match else "").lower()
+                if sname_val == name_lc or swater_val == name_lc:
+                    sanr_match = re.search(r"#SANR(\d+)", block)
+                    sanr_val = sanr_match.group(1) if sanr_match else ""
+                    if sanr_val:
+                        grouped.setdefault(sanr_val, []).append(block)
+
+            if not grouped:
+                op.set(match_type="name_exact_not_found", query=name_target)
+                return None
+
+            if len(grouped) > 1:
+                candidates = sorted(grouped.keys())
+                op.set(match_type="name_ambiguous", query=name_target, candidates=candidates)
+                raise NoDataError(f"Ambiguous name match for '{name_target}'; candidates SANR={candidates}")
+
+            # Unique SANR matched; choose WT if multiple parameter blocks
+            only_sanr = next(iter(grouped.keys()))
+            blocks_for_sanr = grouped[only_sanr]
+            wt_blocks = []
+            for b in blocks_for_sanr:
+                if re.search(r"\|\*\|CNRWT\|\*\|", b):
+                    wt_blocks.append(b)
+            chosen = wt_blocks[0] if wt_blocks else blocks_for_sanr[0]
+            op.set(match_type="name_exact", query=name_target, sanr=only_sanr, parameter=("WT" if wt_blocks else "unknown"))
+            return chosen
+
+        op.set(match_type="none")
+        return None
 
 
 def parse_zrxp_block(block: str) -> list["HydroOOERecord"]:

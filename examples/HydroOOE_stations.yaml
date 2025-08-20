@@ -1,0 +1,1076 @@
+bgl_ts_sbg_laketemp:
+  lakes:
+
+    # Lakes
+
+    # SWATER Almsee
+    - name: Almsee
+      entity_id: hydro_ooe_6120
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6120"
+
+    # SWATER Attersee
+    - name: Attersee - Kammer
+      entity_id: hydro_ooe_5290
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5290"
+    - name: Attersee - Unterach am Attersee
+      entity_id: hydro_ooe_5210
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5210"
+    - name: Attersee - Weißenbach am Attersee (Seepegel)
+      entity_id: hydro_ooe_5250
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5250"
+
+    # SWATER Hallstätter See
+    - name: Hallstätter See - Steeg (Bootshütte)
+      entity_id: hydro_ooe_4190
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4190"
+
+    # SWATER Mondsee
+    - name: Mondsee - Limnolog. Institut
+      entity_id: hydro_ooe_5020
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5020"
+
+    # SWATER Traunsee
+    - name: Traunsee - Ebensee (Landungssteg)
+      entity_id: hydro_ooe_4510
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4510"
+    - name: Traunsee - Gmunden (Esplanade)
+      entity_id: hydro_ooe_4590
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4590"
+
+    # SWATER Wolfgangsee (Abersee)
+    - name: Wolfgangsee (Abersee) - Strobl
+      entity_id: hydro_ooe_4310
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4310"
+
+    # SWATER Zeller See (Irrsee)
+    - name: Zeller See (Irrsee) - Zell am Moos
+      entity_id: hydro_ooe_5005
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5005"
+
+    # Other
+
+    # SWATER Ager
+    - name: Ager - Schalchham
+      entity_id: hydro_ooe_5720
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5720"
+    - name: Ager - Fischerau
+      entity_id: hydro_ooe_5990
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5990"
+    - name: Ager - Raudaschlsäge
+      entity_id: hydro_ooe_5320
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5320"
+    - name: Ager - Dürnau
+      entity_id: hydro_ooe_5380
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5380"
+
+    # SWATER Aist
+    - name: Aist - Schwertberg (Kaolinwerk)
+      entity_id: hydro_ooe_9330
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9330"
+
+    # SWATER Aiterbach
+    - name: Aiterbach - Oberschauersberg
+      entity_id: hydro_ooe_6370
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6370"
+
+    # SWATER Antiesen
+    - name: Antiesen - Danner
+      entity_id: hydro_ooe_2615
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2615"
+    - name: Antiesen - Haging
+      entity_id: hydro_ooe_2660
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2660"
+    - name: Antiesen - Eberschwang-Mühring
+      entity_id: hydro_ooe_2610
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2610"
+
+    # SWATER Alm
+    - name: Alm - Grünau
+      entity_id: hydro_ooe_6150
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6150"
+    - name: Alm - Friedlmühle
+      entity_id: hydro_ooe_6210
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6210"
+    - name: Alm - Penningersteg
+      entity_id: hydro_ooe_6270
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6270"
+
+    # SWATER Aschach
+    - name: Aschach - Kropfmühle
+      entity_id: hydro_ooe_3770
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3770"
+    - name: Aschach - Niederspaching
+      entity_id: hydro_ooe_3750
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3750"
+
+    # SWATER Aubach
+    - name: Aubach - RHB Hoeft Aubach
+      entity_id: hydro_ooe_3535
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3535"
+
+    # SWATER Aurach
+    - name: Aurach - Aurachkirchen
+      entity_id: hydro_ooe_5870
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5870"
+
+    # SWATER Diersbach
+    - name: Diersbach - Diersbach
+      entity_id: hydro_ooe_2870
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2870"
+
+    # SWATER Diestlbach
+    - name: Diestlbach - Zwettl an der Rodl (Gemeindeamt)
+      entity_id: hydro_ooe_3855
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3855"
+
+    # SWATER Donau
+    - name: Donau - Linz
+      entity_id: hydro_ooe_207068
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "207068"
+    - name: Donau - Grein (Schiffsstation)
+      entity_id: hydro_ooe_207100
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "207100"
+    - name: Donau - Mauthausen
+      entity_id: hydro_ooe_207084
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "207084"
+    - name: Donau - Engelhartszell
+      entity_id: hydro_ooe_207027
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "207027"
+    - name: Donau - Achleiten
+      entity_id: hydro_ooe_207019
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "207019"
+
+    # SWATER Dürre Ager
+    - name: Dürre Ager - St. Georgen im Attergau
+      entity_id: hydro_ooe_5570
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5570"
+    - name: Dürre Ager - Timelkam (Fußgängersteg)
+      entity_id: hydro_ooe_5595
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5595"
+
+    # SWATER Dürre Aschach
+    - name: Dürre Aschach - Neumarkt im Hausruckkreis
+      entity_id: hydro_ooe_3740
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3740"
+
+    # SWATER Enknach
+    - name: Enknach - Österlehen
+      entity_id: hydro_ooe_2074
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2074"
+
+    # SWATER Enns
+    - name: Enns - Jägerberg
+      entity_id: hydro_ooe_8190
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8190"
+    - name: Enns - Steyr (Ortskai)
+      entity_id: hydro_ooe_8910
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8910"
+
+    # SWATER Feldaist
+    - name: Feldaist - Freistadt (Hafnerzeile)
+      entity_id: hydro_ooe_9130
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9130"
+    - name: Feldaist - Kefermarkt
+      entity_id: hydro_ooe_9160
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9160"
+    - name: Feldaist - Rainbach im Mühlkreis (Stadln)
+      entity_id: hydro_ooe_9120
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9120"
+
+    # SWATER Faule Aschach
+    - name: Faule Aschach - Edtmühle
+      entity_id: hydro_ooe_3748
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3748"
+
+    # SWATER Große Gusen
+    - name: Große Gusen - Engerwitzdorf
+      entity_id: hydro_ooe_7140
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "7140"
+    - name: Große Gusen - Reichenau im Mühlkreis
+      entity_id: hydro_ooe_7110
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "7110"
+
+    # SWATER Große Mühl
+    - name: Große Mühl - Teufelmühle
+      entity_id: hydro_ooe_3350
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3350"
+    - name: Große Mühl - Vorderanger
+      entity_id: hydro_ooe_3210
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3210"
+    - name: Große Mühl - Furtmühle
+      entity_id: hydro_ooe_3280
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3280"
+
+    # SWATER Große Naarn
+    - name: Große Naarn - Königswiesen (Ort)
+      entity_id: hydro_ooe_9420
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9420"
+
+    # SWATER Große Rodl
+    - name: Große Rodl - Zwettl an der Rodl
+      entity_id: hydro_ooe_3850
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3850"
+    - name: Große Rodl - Rottenegg
+      entity_id: hydro_ooe_3880
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3880"
+
+    # SWATER Großer Haselbach
+    - name: Großer Haselbach - Asberg
+      entity_id: hydro_ooe_3960
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3960"
+
+    # SWATER Grünbach
+    - name: Grünbach - Sirfling
+      entity_id: hydro_ooe_6450
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6450"
+
+    # SWATER Gusen
+    - name: Gusen - St. Georgen an der Gusen (Bad)
+      entity_id: hydro_ooe_7185
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "7185"
+
+    # SWATER Gurtenbach
+    - name: Gurtenbach - Gurten
+      entity_id: hydro_ooe_2580
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2580"
+
+    # SWATER Hainbach
+    - name: Hainbach - Lengau
+      entity_id: hydro_ooe_2237
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2237"
+    - name: Hainbach - Lengau (Basisableitung)
+      entity_id: hydro_ooe_2246
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2246"
+
+    # SWATER Hörschinger Bach
+    - name: Hörschinger Bach - Hörsching (Ort)
+      entity_id: hydro_ooe_6925
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6925"
+
+    # SWATER Inn
+    - name: Inn - Schärding
+      entity_id: hydro_ooe_2790
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2790"
+
+    # SWATER Innbach
+    - name: Innbach - Pichl bei Wels (Geisensheim)
+      entity_id: hydro_ooe_3565
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3565"
+    - name: Innbach - Fraham
+      entity_id: hydro_ooe_3720
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3720"
+    - name: Innbach - Oberndorf bei Meggenhofen
+      entity_id: hydro_ooe_3520
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3520"
+
+    # SWATER Ischl
+    - name: Ischl - Bad Ischl (Giselabrücke)
+      entity_id: hydro_ooe_4390
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4390"
+    - name: Ischl - Strobl (Bürglstein)
+      entity_id: hydro_ooe_4320
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4320"
+
+    # SWATER Ipfbach
+    - name: Ipfbach - St. Florian bei Linz
+      entity_id: hydro_ooe_7050
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "7050"
+
+    # SWATER Klambach
+    - name: Klambach - Sturmmühle
+      entity_id: hydro_ooe_9520
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9520"
+
+    # SWATER Krems
+    - name: Krems - Kremsmünster (Ort)
+      entity_id: hydro_ooe_6770
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6770"
+    - name: Krems - Kirchdorf an der Krems
+      entity_id: hydro_ooe_6720
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6720"
+    - name: Krems - Kremsdorf
+      entity_id: hydro_ooe_6880
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6880"
+
+    # SWATER Kleine Gusen
+    - name: Kleine Gusen - Unterweitersdorf
+      entity_id: hydro_ooe_7160
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "7160"
+    - name: Kleine Gusen - Pfaffendorf
+      entity_id: hydro_ooe_7150
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "7150"
+
+    # SWATER Kleine Mühl
+    - name: Kleine Mühl - Koblmühle
+      entity_id: hydro_ooe_3130
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3130"
+    - name: Kleine Mühl - Obermühl
+      entity_id: hydro_ooe_3170
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3170"
+
+    # SWATER Krumme Steyr
+    - name: Krumme Steyr - Polsterlucke
+      entity_id: hydro_ooe_8240
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8240"
+
+    # SWATER Krumme Steyrling
+    - name: Krumme Steyrling - Molln
+      entity_id: hydro_ooe_8790
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8790"
+    - name: Krumme Steyrling - Innerbreitenau
+      entity_id: hydro_ooe_8750
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8750"
+
+    # SWATER Laudach
+    - name: Laudach - Au (Mittlere Au)
+      entity_id: hydro_ooe_6260
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6260"
+
+    # SWATER Leithenbach
+    - name: Leithenbach - Knotzberg
+      entity_id: hydro_ooe_3760
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3760"
+
+    # SWATER Maltsch
+    - name: Maltsch - Leopoldschlag
+      entity_id: hydro_ooe_0150
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "0150"
+
+    # SWATER Mattig
+    - name: Mattig - Jahrsdorf
+      entity_id: hydro_ooe_2370
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2370"
+    - name: Mattig - Laimhausmühle
+      entity_id: hydro_ooe_2110
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2110"
+
+    # SWATER Messenbach
+    - name: Messenbach - Lohstampf
+      entity_id: hydro_ooe_2839
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2839"
+
+    # SWATER Mettmacher Ache
+    - name: Mettmacher Ache - Mettmach
+      entity_id: hydro_ooe_2460
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2460"
+
+    # SWATER Mitterweißenbach
+    - name: Mitterweißenbach - Mitterweißenbach
+      entity_id: hydro_ooe_4440
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4440"
+
+    # SWATER Moosache
+    - name: Moosache - Steinwag
+      entity_id: hydro_ooe_1320
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "1320"
+
+    # SWATER Moosbach
+    - name: Moosbach - Lindlau
+      entity_id: hydro_ooe_2520
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2520"
+
+    # SWATER Mühlberger Bach
+    - name: Mühlberger Bach - Lochen
+      entity_id: hydro_ooe_2140
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2140"
+
+    # SWATER Mühlheimer Ache
+    - name: Mühlheimer Ache - Mamling
+      entity_id: hydro_ooe_2550
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2550"
+    - name: Mühlheimer Ache - Altheim
+      entity_id: hydro_ooe_2510
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2510"
+
+    # SWATER Naarn
+    - name: Naarn - Haid
+      entity_id: hydro_ooe_9480
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9480"
+
+    # SWATER Oberach
+    - name: Oberach - Pramet
+      entity_id: hydro_ooe_2620
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2620"
+
+    # SWATER Osternach
+    - name: Osternach - Osternach
+      entity_id: hydro_ooe_2680
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2680"
+
+    # SWATER Pechgraben
+    - name: Pechgraben - Pechgraben
+      entity_id: hydro_ooe_8080
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8080"
+
+    # SWATER Pesenbach
+    - name: Pesenbach - Bad Mühllacken
+      entity_id: hydro_ooe_3475
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3475"
+    - name: Pesenbach - Niederwaldkirchen
+      entity_id: hydro_ooe_3440
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3440"
+
+    # SWATER Pfudabach
+    - name: Pfudabach - Alfersham
+      entity_id: hydro_ooe_2860
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2860"
+
+    # SWATER Piessling
+    - name: Piessling - Roleithen
+      entity_id: hydro_ooe_8445
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8445"
+
+    # SWATER Pram
+    - name: Pram - Pramerdorf
+      entity_id: hydro_ooe_2890
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2890"
+    - name: Pram - Riedau
+      entity_id: hydro_ooe_2810
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2810"
+    - name: Pram - RHB Altmannsdorf
+      entity_id: hydro_ooe_2807
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2807"
+    - name: Pram - Taufkirchen
+      entity_id: hydro_ooe_2880
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2880"
+    - name: Pram - Pram
+      entity_id: hydro_ooe_2805
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2805"
+    - name: Pram - Winertsham (Steg)
+      entity_id: hydro_ooe_2833
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2833"
+
+    # SWATER Ranna
+    - name: Ranna - Oberkappel
+      entity_id: hydro_ooe_3060
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3060"
+
+    # SWATER Reichramingbach
+    - name: Reichramingbach - Reichraming
+      entity_id: hydro_ooe_8130
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8130"
+
+    # SWATER Rieder Bach
+    - name: Rieder Bach - Ried im Innkreis (Ort)
+      entity_id: hydro_ooe_2630
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2630"
+
+    # SWATER Salzach
+    - name: Salzach - Ettenau
+      entity_id: hydro_ooe_1430
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "1430"
+    - name: Salzach - Ach
+      entity_id: hydro_ooe_1470
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "1470"
+
+    # SWATER Sandbach
+    - name: Sandbach - Eschenau im Hausruckkreis
+      entity_id: hydro_ooe_3764
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3764"
+
+    # SWATER Sarmingbach
+    - name: Sarmingbach - Waldhausen (Seeausfluss)
+      entity_id: hydro_ooe_9570
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9570"
+
+    # SWATER Schalchener Brunnbach
+    - name: Schalchener Brunnbach - Furth (Ort)
+      entity_id: hydro_ooe_2290
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2290"
+
+    # SWATER Schmiedleitnerbach
+    - name: Schmiedleitnerbach - Leonstein
+      entity_id: hydro_ooe_8810
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8810"
+
+    # SWATER Schwemmbach
+    - name: Schwemmbach - Kolming
+      entity_id: hydro_ooe_2250
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2250"
+    - name: Schwemmbach - Friedburg
+      entity_id: hydro_ooe_2220
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2220"
+    - name: Schwemmbach - Furth (Bundesstraße)
+      entity_id: hydro_ooe_2270
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2270"
+
+    # SWATER Seeache
+    - name: Seeache - See am Mondsee (Au)
+      entity_id: hydro_ooe_5120
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5120"
+
+    # SWATER Steinerne Mühl
+    - name: Steinerne Mühl - Hartmannsdorf
+      entity_id: hydro_ooe_3340
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3340"
+
+    # SWATER Steyr
+    - name: Steyr - Pergern
+      entity_id: hydro_ooe_8880
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8880"
+    - name: Steyr - Klaus an der Pyhrnbahn
+      entity_id: hydro_ooe_8620
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8620"
+    - name: Steyr - Kniewas
+      entity_id: hydro_ooe_8290
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8290"
+    - name: Steyr - Dietlgut
+      entity_id: hydro_ooe_8210
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8210"
+    - name: Steyr - Hinterstoder
+      entity_id: hydro_ooe_8250
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8250"
+
+    # SWATER Steyrling
+    - name: Steyrling - Steyrling
+      entity_id: hydro_ooe_8580
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8580"
+
+    # SWATER Stillbach
+    - name: Stillbach - RHB Stillbach
+      entity_id: hydro_ooe_3662
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3662"
+    - name: Stillbach - Still
+      entity_id: hydro_ooe_3660
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3660"
+
+    # SWATER Sulzbach
+    - name: Sulzbach - Unterrohr
+      entity_id: hydro_ooe_6790
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6790"
+
+    # SWATER Teichl
+    - name: Teichl - Spital am Pyhrn
+      entity_id: hydro_ooe_8350
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8350"
+    - name: Teichl - Teichlbrücke
+      entity_id: hydro_ooe_8430
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "8430"
+
+    # SWATER Traun
+    - name: Traun - Obertraun
+      entity_id: hydro_ooe_4030
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4030"
+    - name: Traun - Wels-Lichtenegg
+      entity_id: hydro_ooe_6350
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6350"
+    - name: Traun - Ebensee
+      entity_id: hydro_ooe_4470
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4470"
+    - name: Traun - Bad Ischl (Maxquelle)
+      entity_id: hydro_ooe_4290
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4290"
+    - name: Traun - Ebelsberg
+      entity_id: hydro_ooe_6970
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6970"
+    - name: Traun - Theresienthal
+      entity_id: hydro_ooe_4620
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4620"
+    - name: Traun - Steeg (Seeausfluss)
+      entity_id: hydro_ooe_4210
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "4210"
+    - name: Traun - Hafeld
+      entity_id: hydro_ooe_6310
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6310"
+
+    # SWATER Trattnach
+    - name: Trattnach - Grieskirchen
+      entity_id: hydro_ooe_3680
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3680"
+    - name: Trattnach - Strötting
+      entity_id: hydro_ooe_3620
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3620"
+    - name: Trattnach - Bad Schallerbach
+      entity_id: hydro_ooe_3690
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3690"
+    - name: Trattnach - HWR-Becken Leithen (Ausfluss)
+      entity_id: hydro_ooe_3610
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3610"
+
+    # SWATER Überer Weißenbach
+    - name: Überer Weißenbach - Weißenbach am Attersee
+      entity_id: hydro_ooe_5230
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5230"
+
+    # SWATER Vöckla
+    - name: Vöckla - Stauf
+      entity_id: hydro_ooe_5430
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5430"
+    - name: Vöckla - Timelkam
+      entity_id: hydro_ooe_5490
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5490"
+    - name: Vöckla - Vöcklabruck
+      entity_id: hydro_ooe_5650
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "5650"
+
+    # SWATER Waldaist
+    - name: Waldaist - Pfahnlmühle
+      entity_id: hydro_ooe_9290
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9290"
+    - name: Waldaist (Schwarze Aist) - Weitersfelden
+      entity_id: hydro_ooe_9220
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "9220"
+
+    # SWATER Waldzeller Ache
+    - name: Waldzeller Ache - Waldzell
+      entity_id: hydro_ooe_2410
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "2410"
+
+    # SWATER Welser Mühlbach
+    - name: Welser Mühlbach - Au bei der Traun
+      entity_id: hydro_ooe_6345
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "6345"
+
+    # SWATER Wilder Innbach
+    - name: Wilder Innbach - RHB Hoeft Wilder Innbach
+      entity_id: hydro_ooe_3530
+      source:
+        type: hydro_ooe
+        options:
+          station_id: "3530"
+
+

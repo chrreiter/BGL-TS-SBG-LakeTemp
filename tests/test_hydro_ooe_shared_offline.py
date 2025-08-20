@@ -105,3 +105,42 @@ async def test_hydro_ooe_shared_polling_min_interval_and_single_get() -> None:  
             await s0._dataset_manager.async_close()  # type: ignore[attr-defined]
 
 
+@pytest.mark.asyncio
+async def test_hydro_ooe_sensor_attributes_include_sanr() -> None:  # type: ignore[no-untyped-def]
+    # Title: Hydro OOE attributes include SANR — Expect: 'sanr' present for aggregated sensors
+
+    discovery_info = {
+        CONF_LAKES: [
+            {
+                "name": "Zell am Moos",
+                "url": "https://hydro.ooe.gv.at/#/overview/Wassertemperatur/station/16579/Zell%20am%20Moos/Wassertemperatur?period=P7D",
+                "entity_id": "irrsee_zell",
+                "scan_interval": 1800,
+                "timeout_hours": 336,
+                "source": {"type": "hydro_ooe", "options": {}},
+            }
+        ]
+    }
+
+    # Build payload with SANR 16579
+    block = _zrxp_block("16579", "Zell am Moos", "Irrsee", values=[("20250808140000", "22.4")])
+    payload = block
+
+    added = _EntityList()
+
+    with aioresponses() as mocked:
+        mocked.get(ZRXP_URL, status=200, body=payload, headers={"Content-Type": "text/plain; charset=utf-8"})
+        await async_setup_platform(hass={}, config={}, async_add_entities=added, discovery_info=discovery_info)
+
+        assert len(added.entities) == 1
+        sensor = added.entities[0]
+        # Trigger refresh to populate attributes
+        await sensor.coordinator.async_refresh()
+        attrs = sensor.extra_state_attributes
+        assert attrs.get("sanr") == "16579"
+
+        # Cleanup
+        if getattr(sensor, "_dataset_manager", None) is not None:  # type: ignore[attr-defined]
+            await sensor._dataset_manager.async_close()  # type: ignore[attr-defined]
+
+

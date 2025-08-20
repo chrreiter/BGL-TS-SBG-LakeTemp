@@ -88,7 +88,7 @@ async def test_hydro_ooe_prefers_water_temperature_block_for_same_sanr() -> None
 
 
 # Test: Name-based selection prefers water temperature block when SANR is not provided
-# Expect: Chooses WT block for Irrsee/Zell tokens
+# Expect: Chooses WT block for exact SNAME match
 @pytest.mark.asyncio
 async def test_hydro_ooe_name_based_selection_prefers_wt() -> None:
     from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import HydroOOEScraper
@@ -104,7 +104,7 @@ async def test_hydro_ooe_name_based_selection_prefers_wt() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=zrxp_text, headers={"Content-Type": "text/plain"})
-        async with HydroOOEScraper(sname_contains="Irrsee / Zell am Moos") as scraper:
+        async with HydroOOEScraper(sname_contains="Zell am Moos") as scraper:
             latest = await scraper.fetch_latest()
 
     assert latest.temperature_c == 25.0
@@ -148,7 +148,8 @@ async def test_hydro_ooe_timeout_raises_network() -> None:
 @pytest.mark.asyncio
 async def test_hydro_ooe_malformed_payload_raises_parse() -> None:
     url = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
-    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {"station_id": "5005"}}}
+    # No SANR provided here so the test exercises parsing errors after a name match
+    raw = {"name": "Irrsee", "url": url, "entity_id": "irrsee", "source": {"type": "hydro_ooe", "options": {}}}
     validated = LAKE_SCHEMA(raw)
     lake_cfg = build_lake_config(validated)
 
