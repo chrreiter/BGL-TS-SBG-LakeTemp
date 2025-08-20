@@ -104,7 +104,8 @@ async def test_hydro_ooe_name_based_selection_prefers_wt() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=zrxp_text, headers={"Content-Type": "text/plain"})
-        async with HydroOOEScraper(sname_contains="Zell am Moos") as scraper:
+        # Use exact name matching (name_hint) rather than deprecated substring filtering
+        async with HydroOOEScraper(name_hint="Zell am Moos") as scraper:
             latest = await scraper.fetch_latest()
 
     assert latest.temperature_c == 25.0

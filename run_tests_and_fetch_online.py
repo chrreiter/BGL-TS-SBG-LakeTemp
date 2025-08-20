@@ -120,7 +120,8 @@ async def _fetch_hydro_ooe_latest(session: aiohttp.ClientSession) -> ProviderLiv
     from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import HydroOOEScraper
 
     try:
-        scraper = HydroOOEScraper(sname_contains="Irrsee", session=session)
+        # Prefer explicit SANR to avoid deprecated substring name filtering
+        scraper = HydroOOEScraper(sanr="5005", session=session)
         latest = await scraper.fetch_latest()
         return ProviderLiveReading(
             provider="hydro_ooe",
@@ -303,6 +304,9 @@ def _ensure_test_dependencies_installed() -> None:
         ("tzdata", "tzdata"),
         ("bs4", "beautifulsoup4==4.12.3"),
         ("aiohttp", "aiohttp>=3.9.1"),
+        # Runtime deps needed by the integration/tests when importing schemas & YAML
+        ("voluptuous", "voluptuous"),
+        ("yaml", "PyYAML"),
     ]
 
     missing: List[str] = []
