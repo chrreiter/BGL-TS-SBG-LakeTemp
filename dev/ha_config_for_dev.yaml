@@ -20,7 +20,7 @@ bgl_ts_sbg_laketemp:
     - name: Seethal / Abtsdorfer See
       url: "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
       entity_id: seethal_abtsdorfer
-      scan_interval: 1800
+      scan_interval: 120
       timeout_hours: 24
       source:
         type: gkd_bayern
@@ -37,11 +37,11 @@ bgl_ts_sbg_laketemp:
 
     - name: Attersee
       entity_id: attersee
-      scan_interval: 240
+      scan_interval: 120
       source:
         type: hydro_ooe
         options:
-          {}
+          station_id: "5210"
 
     - name: Fuschlsee
       url: "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt"
@@ -55,7 +55,7 @@ bgl_ts_sbg_laketemp:
 
     - name: Wolfgangsee
       entity_id: wolfgangsee
-      scan_interval: 180
+      scan_interval: 120
       source:
         type: salzburg_ogd
         options:
