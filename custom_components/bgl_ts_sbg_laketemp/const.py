@@ -102,7 +102,6 @@ class LakeSourceType(str, Enum):
     """Supported data source types for scraping."""
 
     GKD_BAYERN = "gkd_bayern"
-    GENERIC_HTML = "generic_html"
     HYDRO_OOE = "hydro_ooe"
     SALZBURG_OGD = "salzburg_ogd"
 
@@ -113,14 +112,6 @@ class GkdBayernOptions:
 
     station_id: str | None = None
     table_selector: str | None = None
-
-
-@dataclass(frozen=True)
-class GenericHtmlOptions:
-    """Options for a generic HTML source extraction."""
-
-    css_selector: str | None = None
-    value_regex: str | None = None
 
 
 @dataclass(frozen=True)
@@ -148,7 +139,7 @@ class SourceConfig:
     """Unified source configuration for a lake."""
 
     type: LakeSourceType
-    options: GkdBayernOptions | GenericHtmlOptions | HydroOOEOptions | SalzburgOGDOptions | None
+    options: GkdBayernOptions | HydroOOEOptions | SalzburgOGDOptions | None
 
 
 @dataclass(frozen=True)
@@ -193,13 +184,6 @@ def _validate_source_block(value: MutableMapping[str, Any]) -> Dict[str, Any]:
         table_selector = options_in.get("table_selector")
         if table_selector is not None and not isinstance(table_selector, str):
             raise vol.Invalid("Invalid source.options.table_selector: expected string")
-    elif source_type is LakeSourceType.GENERIC_HTML:
-        css_selector = options_in.get("css_selector")
-        if css_selector is not None and not isinstance(css_selector, str):
-            raise vol.Invalid("Invalid source.options.css_selector: expected string")
-        value_regex = options_in.get("value_regex")
-        if value_regex is not None and not isinstance(value_regex, str):
-            raise vol.Invalid("Invalid source.options.value_regex: expected string")
     elif source_type is LakeSourceType.HYDRO_OOE:
         station_id = options_in.get("station_id")
         if station_id is not None and not isinstance(station_id, (str, int)):
@@ -221,7 +205,7 @@ def _validate_source_block(value: MutableMapping[str, Any]) -> Dict[str, Any]:
 def _enforce_url_requirement_by_source(value: MutableMapping[str, Any]) -> Dict[str, Any]:
     """Enforce that ``url`` is required for some sources but optional for others.
 
-    - Required: gkd_bayern, generic_html (future)
+    - Required: gkd_bayern
     - Optional: hydro_ooe, salzburg_ogd
     """
 
@@ -236,9 +220,9 @@ def _enforce_url_requirement_by_source(value: MutableMapping[str, Any]) -> Dict[
 
     url_val = value.get(CONF_URL)
 
-    if source_type in (LakeSourceType.GKD_BAYERN, LakeSourceType.GENERIC_HTML):
+    if source_type is LakeSourceType.GKD_BAYERN:
         if not isinstance(url_val, str) or not url_val:
-            raise vol.Invalid("'url' is required for source types gkd_bayern and generic_html")
+            raise vol.Invalid("'url' is required for source type gkd_bayern")
     else:
         # For hydro_ooe and salzburg_ogd allow None or missing.
         # If provided, validate strictly and surface clear, actionable messages.
@@ -296,16 +280,11 @@ def build_lake_config(validated: Dict[str, Any]) -> LakeConfig:
     source_type = LakeSourceType(source_block.get(CONF_SOURCE_TYPE, DEFAULT_SOURCE_TYPE))
     options_dict = source_block.get(CONF_SOURCE_OPTIONS, {})
 
-    options: GkdBayernOptions | GenericHtmlOptions | HydroOOEOptions | SalzburgOGDOptions | None
+    options: GkdBayernOptions | HydroOOEOptions | SalzburgOGDOptions | None
     if source_type is LakeSourceType.GKD_BAYERN:
         options = GkdBayernOptions(
             station_id=options_dict.get("station_id"),
             table_selector=options_dict.get("table_selector"),
-        )
-    elif source_type is LakeSourceType.GENERIC_HTML:
-        options = GenericHtmlOptions(
-            css_selector=options_dict.get("css_selector"),
-            value_regex=options_dict.get("value_regex"),
         )
     elif source_type is LakeSourceType.HYDRO_OOE:
         options = HydroOOEOptions(

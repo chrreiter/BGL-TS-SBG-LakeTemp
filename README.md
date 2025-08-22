@@ -125,8 +125,6 @@ bgl_ts_sbg_laketemp:
     - **options**:
       - **lake_name** (optional): Overrides the name used to match a lake entry in the dataset. Defaults to the top-level `name`.
     - Note: The configured top-level `url` is informational; the scraper always downloads the official TXT dataset.
-  - **generic_html**: Reserved for future use (not yet implemented).
-
 Notes
 - If an optional field is omitted, its default above applies per lake.
 - To override behavior for a specific lake (e.g., stricter freshness), set the optional field in that lake’s block only.
