@@ -5,7 +5,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Almsee
     - name: Almsee
-      entity_id: hydro_ooe_6120
+      entity_id: almsee
       source:
         type: hydro_ooe
         options:
@@ -13,19 +13,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Attersee
     - name: Attersee - Kammer
-      entity_id: hydro_ooe_5290
+      entity_id: attersee_kammer
       source:
         type: hydro_ooe
         options:
           station_id: "5290"
     - name: Attersee - Unterach am Attersee
-      entity_id: hydro_ooe_5210
+      entity_id: attersee_unterach_am_attersee
       source:
         type: hydro_ooe
         options:
           station_id: "5210"
     - name: Attersee - Weißenbach am Attersee (Seepegel)
-      entity_id: hydro_ooe_5250
+      entity_id: attersee_weissenbach_am_attersee_seepegel
       source:
         type: hydro_ooe
         options:
@@ -33,7 +33,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Hallstätter See
     - name: Hallstätter See - Steeg (Bootshütte)
-      entity_id: hydro_ooe_4190
+      entity_id: hallstaetter_see_steeg_bootshuette
       source:
         type: hydro_ooe
         options:
@@ -41,7 +41,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Mondsee
     - name: Mondsee - Limnolog. Institut
-      entity_id: hydro_ooe_5020
+      entity_id: mondsee_limnolog_institut
       source:
         type: hydro_ooe
         options:
@@ -49,13 +49,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Traunsee
     - name: Traunsee - Ebensee (Landungssteg)
-      entity_id: hydro_ooe_4510
+      entity_id: traunsee_ebensee_landungssteg
       source:
         type: hydro_ooe
         options:
           station_id: "4510"
     - name: Traunsee - Gmunden (Esplanade)
-      entity_id: hydro_ooe_4590
+      entity_id: traunsee_gmunden_esplanade
       source:
         type: hydro_ooe
         options:
@@ -63,7 +63,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Wolfgangsee (Abersee)
     - name: Wolfgangsee (Abersee) - Strobl
-      entity_id: hydro_ooe_4310
+      entity_id: wolfgangsee_abersee_strobl
       source:
         type: hydro_ooe
         options:
@@ -71,7 +71,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Zeller See (Irrsee)
     - name: Zeller See (Irrsee) - Zell am Moos
-      entity_id: hydro_ooe_5005
+      entity_id: zeller_see_irrsee_zell_am_moos
       source:
         type: hydro_ooe
         options:
@@ -81,25 +81,25 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Ager
     - name: Ager - Schalchham
-      entity_id: hydro_ooe_5720
+      entity_id: ager_schalchham
       source:
         type: hydro_ooe
         options:
           station_id: "5720"
     - name: Ager - Fischerau
-      entity_id: hydro_ooe_5990
+      entity_id: ager_fischerau
       source:
         type: hydro_ooe
         options:
           station_id: "5990"
     - name: Ager - Raudaschlsäge
-      entity_id: hydro_ooe_5320
+      entity_id: ager_raudaschlsaege
       source:
         type: hydro_ooe
         options:
           station_id: "5320"
     - name: Ager - Dürnau
-      entity_id: hydro_ooe_5380
+      entity_id: ager_duernau
       source:
         type: hydro_ooe
         options:
@@ -107,7 +107,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Aist
     - name: Aist - Schwertberg (Kaolinwerk)
-      entity_id: hydro_ooe_9330
+      entity_id: aist_schwertberg_kaolinwerk
       source:
         type: hydro_ooe
         options:
@@ -115,7 +115,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Aiterbach
     - name: Aiterbach - Oberschauersberg
-      entity_id: hydro_ooe_6370
+      entity_id: aiterbach_oberschauersberg
       source:
         type: hydro_ooe
         options:
@@ -123,19 +123,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Antiesen
     - name: Antiesen - Danner
-      entity_id: hydro_ooe_2615
+      entity_id: antiesen_danner
       source:
         type: hydro_ooe
         options:
           station_id: "2615"
     - name: Antiesen - Haging
-      entity_id: hydro_ooe_2660
+      entity_id: antiesen_haging
       source:
         type: hydro_ooe
         options:
           station_id: "2660"
     - name: Antiesen - Eberschwang-Mühring
-      entity_id: hydro_ooe_2610
+      entity_id: antiesen_eberschwang_muehring
       source:
         type: hydro_ooe
         options:
@@ -143,19 +143,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Alm
     - name: Alm - Grünau
-      entity_id: hydro_ooe_6150
+      entity_id: alm_gruenau
       source:
         type: hydro_ooe
         options:
           station_id: "6150"
     - name: Alm - Friedlmühle
-      entity_id: hydro_ooe_6210
+      entity_id: alm_friedlmuehle
       source:
         type: hydro_ooe
         options:
           station_id: "6210"
     - name: Alm - Penningersteg
-      entity_id: hydro_ooe_6270
+      entity_id: alm_penningersteg
       source:
         type: hydro_ooe
         options:
@@ -163,13 +163,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Aschach
     - name: Aschach - Kropfmühle
-      entity_id: hydro_ooe_3770
+      entity_id: aschach_kropfmuehle
       source:
         type: hydro_ooe
         options:
           station_id: "3770"
     - name: Aschach - Niederspaching
-      entity_id: hydro_ooe_3750
+      entity_id: aschach_niederspaching
       source:
         type: hydro_ooe
         options:
@@ -177,7 +177,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Aubach
     - name: Aubach - RHB Hoeft Aubach
-      entity_id: hydro_ooe_3535
+      entity_id: aubach_rhb_hoeft_aubach
       source:
         type: hydro_ooe
         options:
@@ -185,7 +185,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Aurach
     - name: Aurach - Aurachkirchen
-      entity_id: hydro_ooe_5870
+      entity_id: aurach_aurachkirchen
       source:
         type: hydro_ooe
         options:
@@ -193,7 +193,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Diersbach
     - name: Diersbach - Diersbach
-      entity_id: hydro_ooe_2870
+      entity_id: diersbach_diersbach
       source:
         type: hydro_ooe
         options:
@@ -201,7 +201,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Diestlbach
     - name: Diestlbach - Zwettl an der Rodl (Gemeindeamt)
-      entity_id: hydro_ooe_3855
+      entity_id: diestlbach_zwettl_an_der_rodl_gemeindeamt
       source:
         type: hydro_ooe
         options:
@@ -209,31 +209,31 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Donau
     - name: Donau - Linz
-      entity_id: hydro_ooe_207068
+      entity_id: donau_linz
       source:
         type: hydro_ooe
         options:
           station_id: "207068"
     - name: Donau - Grein (Schiffsstation)
-      entity_id: hydro_ooe_207100
+      entity_id: donau_grein_schiffsstation
       source:
         type: hydro_ooe
         options:
           station_id: "207100"
     - name: Donau - Mauthausen
-      entity_id: hydro_ooe_207084
+      entity_id: donau_mauthausen
       source:
         type: hydro_ooe
         options:
           station_id: "207084"
     - name: Donau - Engelhartszell
-      entity_id: hydro_ooe_207027
+      entity_id: donau_engelhartszell
       source:
         type: hydro_ooe
         options:
           station_id: "207027"
     - name: Donau - Achleiten
-      entity_id: hydro_ooe_207019
+      entity_id: donau_achleiten
       source:
         type: hydro_ooe
         options:
@@ -241,13 +241,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Dürre Ager
     - name: Dürre Ager - St. Georgen im Attergau
-      entity_id: hydro_ooe_5570
+      entity_id: duerre_ager_st_georgen_im_attergau
       source:
         type: hydro_ooe
         options:
           station_id: "5570"
     - name: Dürre Ager - Timelkam (Fußgängersteg)
-      entity_id: hydro_ooe_5595
+      entity_id: duerre_ager_timelkam_fussgaengersteg
       source:
         type: hydro_ooe
         options:
@@ -255,7 +255,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Dürre Aschach
     - name: Dürre Aschach - Neumarkt im Hausruckkreis
-      entity_id: hydro_ooe_3740
+      entity_id: duerre_aschach_neumarkt_im_hausruckkreis
       source:
         type: hydro_ooe
         options:
@@ -263,7 +263,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Enknach
     - name: Enknach - Österlehen
-      entity_id: hydro_ooe_2074
+      entity_id: enknach_oesterlehen
       source:
         type: hydro_ooe
         options:
@@ -271,13 +271,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Enns
     - name: Enns - Jägerberg
-      entity_id: hydro_ooe_8190
+      entity_id: enns_jaegerberg
       source:
         type: hydro_ooe
         options:
           station_id: "8190"
     - name: Enns - Steyr (Ortskai)
-      entity_id: hydro_ooe_8910
+      entity_id: enns_steyr_ortskai
       source:
         type: hydro_ooe
         options:
@@ -285,19 +285,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Feldaist
     - name: Feldaist - Freistadt (Hafnerzeile)
-      entity_id: hydro_ooe_9130
+      entity_id: feldaist_freistadt_hafnerzeile
       source:
         type: hydro_ooe
         options:
           station_id: "9130"
     - name: Feldaist - Kefermarkt
-      entity_id: hydro_ooe_9160
+      entity_id: feldaist_kefermarkt
       source:
         type: hydro_ooe
         options:
           station_id: "9160"
     - name: Feldaist - Rainbach im Mühlkreis (Stadln)
-      entity_id: hydro_ooe_9120
+      entity_id: feldaist_rainbach_im_muehlkreis_stadln
       source:
         type: hydro_ooe
         options:
@@ -305,7 +305,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Faule Aschach
     - name: Faule Aschach - Edtmühle
-      entity_id: hydro_ooe_3748
+      entity_id: faule_aschach_edtmuehle
       source:
         type: hydro_ooe
         options:
@@ -313,13 +313,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Große Gusen
     - name: Große Gusen - Engerwitzdorf
-      entity_id: hydro_ooe_7140
+      entity_id: grosse_gusen_engerwitzdorf
       source:
         type: hydro_ooe
         options:
           station_id: "7140"
     - name: Große Gusen - Reichenau im Mühlkreis
-      entity_id: hydro_ooe_7110
+      entity_id: grosse_gusen_reichenau_im_muehlkreis
       source:
         type: hydro_ooe
         options:
@@ -327,19 +327,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Große Mühl
     - name: Große Mühl - Teufelmühle
-      entity_id: hydro_ooe_3350
+      entity_id: grosse_muehl_teufelmuehle
       source:
         type: hydro_ooe
         options:
           station_id: "3350"
     - name: Große Mühl - Vorderanger
-      entity_id: hydro_ooe_3210
+      entity_id: grosse_muehl_vorderanger
       source:
         type: hydro_ooe
         options:
           station_id: "3210"
     - name: Große Mühl - Furtmühle
-      entity_id: hydro_ooe_3280
+      entity_id: grosse_muehl_furtmuehle
       source:
         type: hydro_ooe
         options:
@@ -347,7 +347,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Große Naarn
     - name: Große Naarn - Königswiesen (Ort)
-      entity_id: hydro_ooe_9420
+      entity_id: grosse_naarn_koenigswiesen_ort
       source:
         type: hydro_ooe
         options:
@@ -355,13 +355,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Große Rodl
     - name: Große Rodl - Zwettl an der Rodl
-      entity_id: hydro_ooe_3850
+      entity_id: grosse_rodl_zwettl_an_der_rodl
       source:
         type: hydro_ooe
         options:
           station_id: "3850"
     - name: Große Rodl - Rottenegg
-      entity_id: hydro_ooe_3880
+      entity_id: grosse_rodl_rottenegg
       source:
         type: hydro_ooe
         options:
@@ -369,7 +369,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Großer Haselbach
     - name: Großer Haselbach - Asberg
-      entity_id: hydro_ooe_3960
+      entity_id: grosser_haselbach_asberg
       source:
         type: hydro_ooe
         options:
@@ -377,7 +377,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Grünbach
     - name: Grünbach - Sirfling
-      entity_id: hydro_ooe_6450
+      entity_id: gruenbach_sirfling
       source:
         type: hydro_ooe
         options:
@@ -385,7 +385,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Gusen
     - name: Gusen - St. Georgen an der Gusen (Bad)
-      entity_id: hydro_ooe_7185
+      entity_id: gusen_st_georgen_an_der_gusen_bad
       source:
         type: hydro_ooe
         options:
@@ -393,7 +393,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Gurtenbach
     - name: Gurtenbach - Gurten
-      entity_id: hydro_ooe_2580
+      entity_id: gurtenbach_gurten
       source:
         type: hydro_ooe
         options:
@@ -401,13 +401,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Hainbach
     - name: Hainbach - Lengau
-      entity_id: hydro_ooe_2237
+      entity_id: hainbach_lengau
       source:
         type: hydro_ooe
         options:
           station_id: "2237"
     - name: Hainbach - Lengau (Basisableitung)
-      entity_id: hydro_ooe_2246
+      entity_id: hainbach_lengau_basisableitung
       source:
         type: hydro_ooe
         options:
@@ -415,7 +415,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Hörschinger Bach
     - name: Hörschinger Bach - Hörsching (Ort)
-      entity_id: hydro_ooe_6925
+      entity_id: hoerschinger_bach_hoersching_ort
       source:
         type: hydro_ooe
         options:
@@ -423,7 +423,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Inn
     - name: Inn - Schärding
-      entity_id: hydro_ooe_2790
+      entity_id: inn_schaerding
       source:
         type: hydro_ooe
         options:
@@ -431,19 +431,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Innbach
     - name: Innbach - Pichl bei Wels (Geisensheim)
-      entity_id: hydro_ooe_3565
+      entity_id: innbach_pichl_bei_wels_geisensheim
       source:
         type: hydro_ooe
         options:
           station_id: "3565"
     - name: Innbach - Fraham
-      entity_id: hydro_ooe_3720
+      entity_id: innbach_fraham
       source:
         type: hydro_ooe
         options:
           station_id: "3720"
     - name: Innbach - Oberndorf bei Meggenhofen
-      entity_id: hydro_ooe_3520
+      entity_id: innbach_oberndorf_bei_meggenhofen
       source:
         type: hydro_ooe
         options:
@@ -451,13 +451,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Ischl
     - name: Ischl - Bad Ischl (Giselabrücke)
-      entity_id: hydro_ooe_4390
+      entity_id: ischl_bad_ischl_giselabruecke
       source:
         type: hydro_ooe
         options:
           station_id: "4390"
     - name: Ischl - Strobl (Bürglstein)
-      entity_id: hydro_ooe_4320
+      entity_id: ischl_strobl_buerglstein
       source:
         type: hydro_ooe
         options:
@@ -465,7 +465,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Ipfbach
     - name: Ipfbach - St. Florian bei Linz
-      entity_id: hydro_ooe_7050
+      entity_id: ipfbach_st_florian_bei_linz
       source:
         type: hydro_ooe
         options:
@@ -473,7 +473,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Klambach
     - name: Klambach - Sturmmühle
-      entity_id: hydro_ooe_9520
+      entity_id: klambach_sturmmuehle
       source:
         type: hydro_ooe
         options:
@@ -481,19 +481,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Krems
     - name: Krems - Kremsmünster (Ort)
-      entity_id: hydro_ooe_6770
+      entity_id: krems_kremsmuenster_ort
       source:
         type: hydro_ooe
         options:
           station_id: "6770"
     - name: Krems - Kirchdorf an der Krems
-      entity_id: hydro_ooe_6720
+      entity_id: krems_kirchdorf_an_der_krems
       source:
         type: hydro_ooe
         options:
           station_id: "6720"
     - name: Krems - Kremsdorf
-      entity_id: hydro_ooe_6880
+      entity_id: krems_kremsdorf
       source:
         type: hydro_ooe
         options:
@@ -501,13 +501,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Kleine Gusen
     - name: Kleine Gusen - Unterweitersdorf
-      entity_id: hydro_ooe_7160
+      entity_id: kleine_gusen_unterweitersdorf
       source:
         type: hydro_ooe
         options:
           station_id: "7160"
     - name: Kleine Gusen - Pfaffendorf
-      entity_id: hydro_ooe_7150
+      entity_id: kleine_gusen_pfaffendorf
       source:
         type: hydro_ooe
         options:
@@ -515,13 +515,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Kleine Mühl
     - name: Kleine Mühl - Koblmühle
-      entity_id: hydro_ooe_3130
+      entity_id: kleine_muehl_koblmuehle
       source:
         type: hydro_ooe
         options:
           station_id: "3130"
     - name: Kleine Mühl - Obermühl
-      entity_id: hydro_ooe_3170
+      entity_id: kleine_muehl_obermuehl
       source:
         type: hydro_ooe
         options:
@@ -529,7 +529,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Krumme Steyr
     - name: Krumme Steyr - Polsterlucke
-      entity_id: hydro_ooe_8240
+      entity_id: krumme_steyr_polsterlucke
       source:
         type: hydro_ooe
         options:
@@ -537,13 +537,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Krumme Steyrling
     - name: Krumme Steyrling - Molln
-      entity_id: hydro_ooe_8790
+      entity_id: krumme_steyrling_molln
       source:
         type: hydro_ooe
         options:
           station_id: "8790"
     - name: Krumme Steyrling - Innerbreitenau
-      entity_id: hydro_ooe_8750
+      entity_id: krumme_steyrling_innerbreitenau
       source:
         type: hydro_ooe
         options:
@@ -551,7 +551,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Laudach
     - name: Laudach - Au (Mittlere Au)
-      entity_id: hydro_ooe_6260
+      entity_id: laudach_au_mittlere_au
       source:
         type: hydro_ooe
         options:
@@ -559,7 +559,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Leithenbach
     - name: Leithenbach - Knotzberg
-      entity_id: hydro_ooe_3760
+      entity_id: leithenbach_knotzberg
       source:
         type: hydro_ooe
         options:
@@ -567,7 +567,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Maltsch
     - name: Maltsch - Leopoldschlag
-      entity_id: hydro_ooe_0150
+      entity_id: maltsch_leopoldschlag
       source:
         type: hydro_ooe
         options:
@@ -575,13 +575,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Mattig
     - name: Mattig - Jahrsdorf
-      entity_id: hydro_ooe_2370
+      entity_id: mattig_jahrsdorf
       source:
         type: hydro_ooe
         options:
           station_id: "2370"
     - name: Mattig - Laimhausmühle
-      entity_id: hydro_ooe_2110
+      entity_id: mattig_laimhausmuehle
       source:
         type: hydro_ooe
         options:
@@ -589,7 +589,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Messenbach
     - name: Messenbach - Lohstampf
-      entity_id: hydro_ooe_2839
+      entity_id: messenbach_lohstampf
       source:
         type: hydro_ooe
         options:
@@ -597,7 +597,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Mettmacher Ache
     - name: Mettmacher Ache - Mettmach
-      entity_id: hydro_ooe_2460
+      entity_id: mettmacher_ache_mettmach
       source:
         type: hydro_ooe
         options:
@@ -605,7 +605,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Mitterweißenbach
     - name: Mitterweißenbach - Mitterweißenbach
-      entity_id: hydro_ooe_4440
+      entity_id: mitterweissenbach_mitterweissenbach
       source:
         type: hydro_ooe
         options:
@@ -613,7 +613,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Moosache
     - name: Moosache - Steinwag
-      entity_id: hydro_ooe_1320
+      entity_id: moosache_steinwag
       source:
         type: hydro_ooe
         options:
@@ -621,7 +621,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Moosbach
     - name: Moosbach - Lindlau
-      entity_id: hydro_ooe_2520
+      entity_id: moosbach_lindlau
       source:
         type: hydro_ooe
         options:
@@ -629,7 +629,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Mühlberger Bach
     - name: Mühlberger Bach - Lochen
-      entity_id: hydro_ooe_2140
+      entity_id: muehlberger_bach_lochen
       source:
         type: hydro_ooe
         options:
@@ -637,13 +637,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Mühlheimer Ache
     - name: Mühlheimer Ache - Mamling
-      entity_id: hydro_ooe_2550
+      entity_id: muehlheimer_ache_mamling
       source:
         type: hydro_ooe
         options:
           station_id: "2550"
     - name: Mühlheimer Ache - Altheim
-      entity_id: hydro_ooe_2510
+      entity_id: muehlheimer_ache_altheim
       source:
         type: hydro_ooe
         options:
@@ -651,7 +651,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Naarn
     - name: Naarn - Haid
-      entity_id: hydro_ooe_9480
+      entity_id: naarn_haid
       source:
         type: hydro_ooe
         options:
@@ -659,7 +659,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Oberach
     - name: Oberach - Pramet
-      entity_id: hydro_ooe_2620
+      entity_id: oberach_pramet
       source:
         type: hydro_ooe
         options:
@@ -667,7 +667,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Osternach
     - name: Osternach - Osternach
-      entity_id: hydro_ooe_2680
+      entity_id: osternach_osternach
       source:
         type: hydro_ooe
         options:
@@ -675,7 +675,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Pechgraben
     - name: Pechgraben - Pechgraben
-      entity_id: hydro_ooe_8080
+      entity_id: pechgraben_pechgraben
       source:
         type: hydro_ooe
         options:
@@ -683,13 +683,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Pesenbach
     - name: Pesenbach - Bad Mühllacken
-      entity_id: hydro_ooe_3475
+      entity_id: pesenbach_bad_muehllacken
       source:
         type: hydro_ooe
         options:
           station_id: "3475"
     - name: Pesenbach - Niederwaldkirchen
-      entity_id: hydro_ooe_3440
+      entity_id: pesenbach_niederwaldkirchen
       source:
         type: hydro_ooe
         options:
@@ -697,7 +697,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Pfudabach
     - name: Pfudabach - Alfersham
-      entity_id: hydro_ooe_2860
+      entity_id: pfudabach_alfersham
       source:
         type: hydro_ooe
         options:
@@ -705,7 +705,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Piessling
     - name: Piessling - Roleithen
-      entity_id: hydro_ooe_8445
+      entity_id: piessling_roleithen
       source:
         type: hydro_ooe
         options:
@@ -713,37 +713,37 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Pram
     - name: Pram - Pramerdorf
-      entity_id: hydro_ooe_2890
+      entity_id: pram_pramerdorf
       source:
         type: hydro_ooe
         options:
           station_id: "2890"
     - name: Pram - Riedau
-      entity_id: hydro_ooe_2810
+      entity_id: pram_riedau
       source:
         type: hydro_ooe
         options:
           station_id: "2810"
     - name: Pram - RHB Altmannsdorf
-      entity_id: hydro_ooe_2807
+      entity_id: pram_rhb_altmannsdorf
       source:
         type: hydro_ooe
         options:
           station_id: "2807"
     - name: Pram - Taufkirchen
-      entity_id: hydro_ooe_2880
+      entity_id: pram_taufkirchen
       source:
         type: hydro_ooe
         options:
           station_id: "2880"
     - name: Pram - Pram
-      entity_id: hydro_ooe_2805
+      entity_id: pram_pram
       source:
         type: hydro_ooe
         options:
           station_id: "2805"
     - name: Pram - Winertsham (Steg)
-      entity_id: hydro_ooe_2833
+      entity_id: pram_winertsham_steg
       source:
         type: hydro_ooe
         options:
@@ -751,7 +751,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Ranna
     - name: Ranna - Oberkappel
-      entity_id: hydro_ooe_3060
+      entity_id: ranna_oberkappel
       source:
         type: hydro_ooe
         options:
@@ -759,7 +759,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Reichramingbach
     - name: Reichramingbach - Reichraming
-      entity_id: hydro_ooe_8130
+      entity_id: reichramingbach_reichraming
       source:
         type: hydro_ooe
         options:
@@ -767,7 +767,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Rieder Bach
     - name: Rieder Bach - Ried im Innkreis (Ort)
-      entity_id: hydro_ooe_2630
+      entity_id: rieder_bach_ried_im_innkreis_ort
       source:
         type: hydro_ooe
         options:
@@ -775,13 +775,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Salzach
     - name: Salzach - Ettenau
-      entity_id: hydro_ooe_1430
+      entity_id: salzach_ettenau
       source:
         type: hydro_ooe
         options:
           station_id: "1430"
     - name: Salzach - Ach
-      entity_id: hydro_ooe_1470
+      entity_id: salzach_ach
       source:
         type: hydro_ooe
         options:
@@ -789,7 +789,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Sandbach
     - name: Sandbach - Eschenau im Hausruckkreis
-      entity_id: hydro_ooe_3764
+      entity_id: sandbach_eschenau_im_hausruckkreis
       source:
         type: hydro_ooe
         options:
@@ -797,7 +797,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Sarmingbach
     - name: Sarmingbach - Waldhausen (Seeausfluss)
-      entity_id: hydro_ooe_9570
+      entity_id: sarmingbach_waldhausen_seeausfluss
       source:
         type: hydro_ooe
         options:
@@ -805,7 +805,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Schalchener Brunnbach
     - name: Schalchener Brunnbach - Furth (Ort)
-      entity_id: hydro_ooe_2290
+      entity_id: schalchener_brunnbach_furth_ort
       source:
         type: hydro_ooe
         options:
@@ -813,7 +813,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Schmiedleitnerbach
     - name: Schmiedleitnerbach - Leonstein
-      entity_id: hydro_ooe_8810
+      entity_id: schmiedleitnerbach_leonstein
       source:
         type: hydro_ooe
         options:
@@ -821,19 +821,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Schwemmbach
     - name: Schwemmbach - Kolming
-      entity_id: hydro_ooe_2250
+      entity_id: schwemmbach_kolming
       source:
         type: hydro_ooe
         options:
           station_id: "2250"
     - name: Schwemmbach - Friedburg
-      entity_id: hydro_ooe_2220
+      entity_id: schwemmbach_friedburg
       source:
         type: hydro_ooe
         options:
           station_id: "2220"
     - name: Schwemmbach - Furth (Bundesstraße)
-      entity_id: hydro_ooe_2270
+      entity_id: schwemmbach_furth_bundesstrasse
       source:
         type: hydro_ooe
         options:
@@ -841,7 +841,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Seeache
     - name: Seeache - See am Mondsee (Au)
-      entity_id: hydro_ooe_5120
+      entity_id: seeache_see_am_mondsee_au
       source:
         type: hydro_ooe
         options:
@@ -849,7 +849,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Steinerne Mühl
     - name: Steinerne Mühl - Hartmannsdorf
-      entity_id: hydro_ooe_3340
+      entity_id: steinerne_muehl_hartmannsdorf
       source:
         type: hydro_ooe
         options:
@@ -857,31 +857,31 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Steyr
     - name: Steyr - Pergern
-      entity_id: hydro_ooe_8880
+      entity_id: steyr_pergern
       source:
         type: hydro_ooe
         options:
           station_id: "8880"
     - name: Steyr - Klaus an der Pyhrnbahn
-      entity_id: hydro_ooe_8620
+      entity_id: steyr_klaus_an_der_pyhrnbahn
       source:
         type: hydro_ooe
         options:
           station_id: "8620"
     - name: Steyr - Kniewas
-      entity_id: hydro_ooe_8290
+      entity_id: steyr_kniewas
       source:
         type: hydro_ooe
         options:
           station_id: "8290"
     - name: Steyr - Dietlgut
-      entity_id: hydro_ooe_8210
+      entity_id: steyr_dietlgut
       source:
         type: hydro_ooe
         options:
           station_id: "8210"
     - name: Steyr - Hinterstoder
-      entity_id: hydro_ooe_8250
+      entity_id: steyr_hinterstoder
       source:
         type: hydro_ooe
         options:
@@ -889,7 +889,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Steyrling
     - name: Steyrling - Steyrling
-      entity_id: hydro_ooe_8580
+      entity_id: steyrling_steyrling
       source:
         type: hydro_ooe
         options:
@@ -897,13 +897,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Stillbach
     - name: Stillbach - RHB Stillbach
-      entity_id: hydro_ooe_3662
+      entity_id: stillbach_rhb_stillbach
       source:
         type: hydro_ooe
         options:
           station_id: "3662"
     - name: Stillbach - Still
-      entity_id: hydro_ooe_3660
+      entity_id: stillbach_still
       source:
         type: hydro_ooe
         options:
@@ -911,7 +911,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Sulzbach
     - name: Sulzbach - Unterrohr
-      entity_id: hydro_ooe_6790
+      entity_id: sulzbach_unterrohr
       source:
         type: hydro_ooe
         options:
@@ -919,13 +919,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Teichl
     - name: Teichl - Spital am Pyhrn
-      entity_id: hydro_ooe_8350
+      entity_id: teichl_spital_am_pyhrn
       source:
         type: hydro_ooe
         options:
           station_id: "8350"
     - name: Teichl - Teichlbrücke
-      entity_id: hydro_ooe_8430
+      entity_id: teichl_teichlbruecke
       source:
         type: hydro_ooe
         options:
@@ -933,49 +933,49 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Traun
     - name: Traun - Obertraun
-      entity_id: hydro_ooe_4030
+      entity_id: traun_obertraun
       source:
         type: hydro_ooe
         options:
           station_id: "4030"
     - name: Traun - Wels-Lichtenegg
-      entity_id: hydro_ooe_6350
+      entity_id: traun_wels_lichtenegg
       source:
         type: hydro_ooe
         options:
           station_id: "6350"
     - name: Traun - Ebensee
-      entity_id: hydro_ooe_4470
+      entity_id: traun_ebensee
       source:
         type: hydro_ooe
         options:
           station_id: "4470"
     - name: Traun - Bad Ischl (Maxquelle)
-      entity_id: hydro_ooe_4290
+      entity_id: traun_bad_ischl_maxquelle
       source:
         type: hydro_ooe
         options:
           station_id: "4290"
     - name: Traun - Ebelsberg
-      entity_id: hydro_ooe_6970
+      entity_id: traun_ebelsberg
       source:
         type: hydro_ooe
         options:
           station_id: "6970"
     - name: Traun - Theresienthal
-      entity_id: hydro_ooe_4620
+      entity_id: traun_theresienthal
       source:
         type: hydro_ooe
         options:
           station_id: "4620"
     - name: Traun - Steeg (Seeausfluss)
-      entity_id: hydro_ooe_4210
+      entity_id: traun_steeg_seeausfluss
       source:
         type: hydro_ooe
         options:
           station_id: "4210"
     - name: Traun - Hafeld
-      entity_id: hydro_ooe_6310
+      entity_id: traun_hafeld
       source:
         type: hydro_ooe
         options:
@@ -983,25 +983,25 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Trattnach
     - name: Trattnach - Grieskirchen
-      entity_id: hydro_ooe_3680
+      entity_id: trattnach_grieskirchen
       source:
         type: hydro_ooe
         options:
           station_id: "3680"
     - name: Trattnach - Strötting
-      entity_id: hydro_ooe_3620
+      entity_id: trattnach_stroetting
       source:
         type: hydro_ooe
         options:
           station_id: "3620"
     - name: Trattnach - Bad Schallerbach
-      entity_id: hydro_ooe_3690
+      entity_id: trattnach_bad_schallerbach
       source:
         type: hydro_ooe
         options:
           station_id: "3690"
     - name: Trattnach - HWR-Becken Leithen (Ausfluss)
-      entity_id: hydro_ooe_3610
+      entity_id: trattnach_hwr_becken_leithen_ausfluss
       source:
         type: hydro_ooe
         options:
@@ -1009,7 +1009,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Überer Weißenbach
     - name: Überer Weißenbach - Weißenbach am Attersee
-      entity_id: hydro_ooe_5230
+      entity_id: ueberer_weissenbach_weissenbach_am_attersee
       source:
         type: hydro_ooe
         options:
@@ -1017,19 +1017,19 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Vöckla
     - name: Vöckla - Stauf
-      entity_id: hydro_ooe_5430
+      entity_id: voeckla_stauf
       source:
         type: hydro_ooe
         options:
           station_id: "5430"
     - name: Vöckla - Timelkam
-      entity_id: hydro_ooe_5490
+      entity_id: voeckla_timelkam
       source:
         type: hydro_ooe
         options:
           station_id: "5490"
     - name: Vöckla - Vöcklabruck
-      entity_id: hydro_ooe_5650
+      entity_id: voeckla_voecklabruck
       source:
         type: hydro_ooe
         options:
@@ -1037,13 +1037,13 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Waldaist
     - name: Waldaist - Pfahnlmühle
-      entity_id: hydro_ooe_9290
+      entity_id: waldaist_pfahnlmuehle
       source:
         type: hydro_ooe
         options:
           station_id: "9290"
     - name: Waldaist (Schwarze Aist) - Weitersfelden
-      entity_id: hydro_ooe_9220
+      entity_id: waldaist_schwarze_aist_weitersfelden
       source:
         type: hydro_ooe
         options:
@@ -1051,7 +1051,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Waldzeller Ache
     - name: Waldzeller Ache - Waldzell
-      entity_id: hydro_ooe_2410
+      entity_id: waldzeller_ache_waldzell
       source:
         type: hydro_ooe
         options:
@@ -1059,7 +1059,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Welser Mühlbach
     - name: Welser Mühlbach - Au bei der Traun
-      entity_id: hydro_ooe_6345
+      entity_id: welser_muehlbach_au_bei_der_traun
       source:
         type: hydro_ooe
         options:
@@ -1067,7 +1067,7 @@ bgl_ts_sbg_laketemp:
 
     # SWATER Wilder Innbach
     - name: Wilder Innbach - RHB Hoeft Wilder Innbach
-      entity_id: hydro_ooe_3530
+      entity_id: wilder_innbach_rhb_hoeft_wilder_innbach
       source:
         type: hydro_ooe
         options:

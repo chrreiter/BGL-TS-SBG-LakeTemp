@@ -5,7 +5,7 @@ bgl_ts_sbg_laketemp:
 
     # Station number: 203653
     - name: Fuschlsee
-      entity_id: fuschlsee_203653
+      entity_id: fuschlsee
       source:
         type: salzburg_ogd
         options:
@@ -13,7 +13,7 @@ bgl_ts_sbg_laketemp:
 
     # Station number: 204131
     - name: Grabensee
-      entity_id: grabensee_204131
+      entity_id: grabensee
       source:
         type: salzburg_ogd
         options:
@@ -21,7 +21,7 @@ bgl_ts_sbg_laketemp:
 
     # Station number: 203604
     - name: Mattsee
-      entity_id: mattsee_203604
+      entity_id: mattsee
       source:
         type: salzburg_ogd
         options:
@@ -29,7 +29,7 @@ bgl_ts_sbg_laketemp:
 
     # Station number: 203612
     - name: Obertrumer See
-      entity_id: obertrumer_see_203612
+      entity_id: obertrumer_see
       source:
         type: salzburg_ogd
         options:
@@ -37,7 +37,7 @@ bgl_ts_sbg_laketemp:
 
     # Station number: 203588
     - name: Wallersee
-      entity_id: wallersee_203588
+      entity_id: wallersee
       source:
         type: salzburg_ogd
         options:
@@ -45,7 +45,7 @@ bgl_ts_sbg_laketemp:
 
     # Station number: 203646
     - name: Wolfgangsee
-      entity_id: wolfgangsee_203646
+      entity_id: wolfgangsee
       source:
         type: salzburg_ogd
         options:
@@ -53,7 +53,7 @@ bgl_ts_sbg_laketemp:
 
     # Station number: 203117
     - name: Zeller See
-      entity_id: zeller_see_203117
+      entity_id: zeller_see
       source:
         type: salzburg_ogd
         options:

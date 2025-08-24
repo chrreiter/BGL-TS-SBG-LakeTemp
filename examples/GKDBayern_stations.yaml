@@ -1,0 +1,1311 @@
+# Vorlage: GKD Bayern Stationen (Seen & Flüsse)
+# Copy&Paste einzelne Einträge unter bgl_ts_sbg_laketemp.lakes in Ihre configuration.yaml.
+# Beispiel-Einfügepunkt:
+# bgl_ts_sbg_laketemp:
+#   lakes:
+#     - name: ...
+#       url: ...
+#       entity_id: ...
+#       source:
+#         type: gkd_bayern
+
+# -------------------------------------------------
+# Seen (nach Landkreis sortiert, Unterkategorie als Kommentar)
+# -------------------------------------------------
+
+# Landkreis Berchtesgadener Land (BGL)
+- name: Abtsdorfer See
+  # Station: Seethal
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte
+  entity_id: abtsdorfer_see_bgl
+  source:
+    type: gkd_bayern
+
+- name: Königssee
+  # Station: Königssee
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/koenigssee-18624806/messwerte
+  entity_id: koenigssee_bgl
+  source:
+    type: gkd_bayern
+
+# Landkreis Freyung-Grafenau (FRG)
+- name: Rachelsee
+  # Station: Rachelsee
+  # HINWEIS: URL wirkt unplausibel (verweist auf Rottachsee). Bitte prüfen.
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/passau/rachelsee-17411955
+  entity_id: rachelsee_frg
+  source:
+    type: gkd_bayern
+
+# Landkreis Lindau (LI)
+- name: Bodensee
+  # Station: Lindau
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/iller_lech/lindau-20001001/messwerte
+  entity_id: bodensee_li
+  source:
+    type: gkd_bayern
+
+# Landkreis Landsberg am Lech (LL)
+- name: Ammersee
+  # Station: Ammerseeboje
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/ammerseeboje-16601050/messwerte
+  entity_id: ammersee_ammerseeboje_ll
+  source:
+    type: gkd_bayern
+
+- name: Ammersee
+  # Station: Stegen
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/stegen-16602008/messwerte
+  entity_id: ammersee_stegen_ll
+  source:
+    type: gkd_bayern
+
+# Landkreis Miesbach (MB)
+- name: Tegernsee
+  # Station: Gmund_Tegernsee
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/gmund_tegernsee-18201303/messwerte
+  entity_id: tegernsee_mb
+  source:
+    type: gkd_bayern
+
+- name: Schliersee
+  # Station: Schliersee
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/schliersee-18222008/messwerte
+  entity_id: schliersee_mb
+  source:
+    type: gkd_bayern
+
+# Landkreis Oberallgäu (OA)
+- name: Engeratsgundsee
+  # Station: Engeratsgundsee
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/iller_lech/engeratsgundsee-11422003/messwerte
+  entity_id: engeratsgundsee_oa
+  source:
+    type: gkd_bayern
+
+- name: Laufbichelsee
+  # Station: Laufbichelsee
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/iller_lech/laufbichelsee-11422006/messwerte
+  entity_id: laufbichelsee_oa
+  source:
+    type: gkd_bayern
+
+- name: Rottachsee
+  # Station: Rottachsee
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/iller_lech/rottachsee-11444001/messwerte
+  entity_id: rottachsee_oa
+  source:
+    type: gkd_bayern
+
+# Landkreis Rosenheim (RO)
+- name: Chiemsee
+  # Station: Stock
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/stock-18400503/messwerte
+  entity_id: chiemsee_ro
+  source:
+    type: gkd_bayern
+
+# Landkreis Starnberg (STA)
+- name: Pilsensee
+  # Station: Pilsensee
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/pilsensee-16628055/messwerte
+  entity_id: pilsensee_sta
+  source:
+    type: gkd_bayern
+
+- name: Starnberger See
+  # Station: Starnberg
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/starnberg-16663002/messwerte
+  entity_id: starnbergersee_sta
+  source:
+    type: gkd_bayern
+
+- name: Wörthsee
+  # Station: Wörthsee
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/woerthsee-16651003/messwerte
+  entity_id: woerthsee_sta
+  source:
+    type: gkd_bayern
+
+# Landkreis Schweinfurt (SW)
+- name: Ellertshäuser See
+  # Station: Ellertshäuser See Seepegel
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/main_unten/ellertshaeuser-see-seepegel-24444001/messwerte
+  entity_id: ellertshaeuser_see_sw
+  source:
+    type: gkd_bayern
+
+# Landkreis Traunstein (TS)
+- name: Waginger See
+  # Station: Buchwinkel
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/buchwinkel-18682507/messwerte
+  entity_id: waginger_see_ts
+  source:
+    type: gkd_bayern
+
+- name: Weitsee
+  # Station: Seegatterl
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/seegatterl-18486509/messwerte
+  entity_id: weitsee_ts
+  source:
+    type: gkd_bayern
+
+# Landkreis Weißenburg-Gunzenhausen (WUG)
+- name: Altmühlsee
+  # Station: Altmühlsee Seepegel
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/kelheim/altmuehlsee-seepegel-13404904/messwerte
+  entity_id: altmuehlsee_wug
+  source:
+    type: gkd_bayern
+
+- name: Kleiner Brombachsee
+  # Station: Brombachsee Vorsperre
+  url: https://www.gkd.bayern.de/de/seen/wassertemperatur/kelheim/brombachsee-vorsperre-24214445/messwerte
+  entity_id: kleiner_brombachsee_wug
+  source:
+    type: gkd_bayern
+
+
+# -------------------------------------------------
+# Flüsse (nach Landkreis sortiert, Unterkategorie als Kommentar)
+# -------------------------------------------------
+
+# Stadt Augsburg (A)
+- name: Lech
+  # Station: Augsburg Hochablaß
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/augsburg-hochablass-12004002/messwerte
+  entity_id: lech_a
+  source:
+    type: gkd_bayern
+
+# Stadt/Landkreis Aschaffenburg (AB)
+- name: Main
+  # Station: Obernau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/obernau-24070006/messwerte
+  entity_id: main_obernau_ab
+  source:
+    type: gkd_bayern
+
+- name: Main
+  # Station: Kahl a. Main Messstation
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/kahl-a-main-messstation-24078008/messwerte
+  entity_id: main_kahl_a_main_messstation_ab
+  source:
+    type: gkd_bayern
+
+# Stadt Amberg (AM)
+- name: Vils
+  # Station: Amberg
+  # HINWEIS: URL enthält doppelt ".../messwerte/messwerte" – bitte prüfen.
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/naab_regen/amberg-14604002/messwerte
+  entity_id: vils_am
+  source:
+    type: gkd_bayern
+
+# Landkreis Amberg-Sulzbach (AS)
+- name: Vils
+  # Station: Schmidmuehlen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/schmidmuehlen-14606008/messwerte
+  entity_id: vils_as
+  source:
+    type: gkd_bayern
+
+- name: Lauterach
+  # Station: Stettkirchen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/stettkirchen-14685004/messwerte
+  entity_id: lauterach_as
+  source:
+    type: gkd_bayern
+
+# Landkreis Altötting (AÖ)
+- name: Isen
+  # Station: Engfurt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/engfurt-18384509/messwerte
+  entity_id: isen_aoe
+  source:
+    type: gkd_bayern
+
+- name: Alz
+  # Station: Burgkirchen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/burgkirchen-18408200/messwerte
+  entity_id: alz_aoe
+  source:
+    type: gkd_bayern
+
+# Landkreis Bamberg (BA)
+- name: Main
+  # Station: Kemmern
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/kemmern-24010004/messwerte
+  entity_id: main_kemmern_ba
+  source:
+    type: gkd_bayern
+
+- name: Main
+  # Station: Trunstadt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/trunstadt-24012203/messwerte
+  entity_id: main_trunstadt_ba
+  source:
+    type: gkd_bayern
+
+- name: Regnitz
+  # Station: Pettstadt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/pettstadt-24208806/messwerte
+  entity_id: regnitz_ba
+  source:
+    type: gkd_bayern
+
+- name: Reiche Ebrach
+  # Station: Röbersdorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/roebersdorf-24292507/messwerte
+  entity_id: reiche_ebrach_ba
+  source:
+    type: gkd_bayern
+
+# Landkreis Berchtesgadener Land (BGL)
+- name: Salzach
+  # Station: Laufen Siegerstetter Keller
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/inn/laufen-siegerstetter-keller-18602009/messwerte
+  entity_id: salzach_bgl
+  source:
+    type: gkd_bayern
+
+- name: Berchtesgadener Ache
+  # Station: Berchtesgaden KA
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/inn/berchtesgaden-ka-18620500/messwerte
+  entity_id: berchtesgadener_ache_bgl
+  source:
+    type: gkd_bayern
+
+- name: Saalach
+  # Station: Unterjettenberg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/unterjettenberg-18642003/messwerte
+  entity_id: saalach_bgl
+  source:
+    type: gkd_bayern
+
+# Stadt Bayreuth (BT)
+- name: Roter Main
+  # Station: Bayreuth
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/bayreuth-24123000/messwerte
+  entity_id: roter_main_bt
+  source:
+    type: gkd_bayern
+
+- name: Wiesent
+  # Station: Hollfeld
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/hollfeld-24240503/messwerte
+  entity_id: wiesent_bt
+  source:
+    type: gkd_bayern
+
+# Landkreis Cham (CHA)
+- name: Regen
+  # Station: Pulling
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/pulling-15201001/messwerte
+  entity_id: regen_cha
+  source:
+    type: gkd_bayern
+
+# Landkreis Coburg (CO)
+- name: Steinach
+  # Station: Fürth am Berg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/fuerth-am-berg-24149208/messwerte
+  entity_id: steinach_co
+  source:
+    type: gkd_bayern
+
+- name: Itz
+  # Station: Schenkenau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/schenkenau-24163005/messwerte
+  entity_id: itz_co
+  source:
+    type: gkd_bayern
+
+- name: Sulzbach
+  # Station: Kösfeld
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/koesfeld-24165805/messwerte
+  entity_id: sulzbach_co
+  source:
+    type: gkd_bayern
+
+# Darmstadt/Darmstadt-Dieburg (DA, HE)
+- name: Gesprenz
+  # Station: Harreshausen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/harreshausen-24766000/messwerte
+  entity_id: gesprenz_da
+  source:
+    type: gkd_bayern
+
+# Landkreis Deggendorf (DEG)
+- name: Donau
+  # Station: Deggendorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/deggendorf-10081004/messwerte
+  entity_id: donau_deg
+  source:
+    type: gkd_bayern
+
+# Landkreis Dingolfing-Landau (DGF)
+- name: Isar
+  # Station: Landau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/landau-16008007/messwerte
+  entity_id: isar_dgf
+  source:
+    type: gkd_bayern
+
+- name: Vils
+  # Station: Rottersdorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/rottersdorf-17204204/messwerte
+  entity_id: vils_dgf
+  source:
+    type: gkd_bayern
+
+# Landkreis Dillingen a.d. Donau (DLG)
+- name: Brenz
+  # Station: Bächingen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/baechingen-11723504/messwerte
+  entity_id: brenz_dlg
+  source:
+    type: gkd_bayern
+
+# Landkreis Donau-Ries (DON)
+- name: Donau
+  # Station: Donauwörth
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/donauwoerth-10039802/messwerte
+  entity_id: donau_don
+  source:
+    type: gkd_bayern
+
+# Landkreis Ebersberg (EBE)
+- name: Attel
+  # Station: Aßling
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/assling-18343002/messwerte
+  entity_id: attel_ebe
+  source:
+    type: gkd_bayern
+
+# Landkreis Eichstätt (EI)
+- name: Altmühl
+  # Station: Eichstätt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/eichstaett-13407200/messwerte
+  entity_id: altmuehl_ei
+  source:
+    type: gkd_bayern
+
+- name: Altmühl
+  # Station: Beilngries o.d. Sulz
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/beilngries-o-d-sulz-13407902/messwerte
+  entity_id: altmuehl_beilngries_o_d_sulz_ei
+  source:
+    type: gkd_bayern
+
+# Stadt Erlangen (ER)
+- name: Schwabach
+  # Station: Erlangen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/regnitz/erlangen-24238501/messwerte
+  entity_id: schwabach_er
+  source:
+    type: gkd_bayern
+
+# Odenwaldkreis (ERB, HE)
+- name: Mümling
+  # Station: Hainstadt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/hainstadt-24744008/messwerte
+  entity_id: muemling_erb
+  source:
+    type: gkd_bayern
+
+# Landkreis Forchheim (FO)
+- name: Regnitz
+  # Station: Hausen Messstation
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/regnitz/hausen-messstation-24204200/messwerte
+  entity_id: regnitz_fo
+  source:
+    type: gkd_bayern
+
+- name: Wiesent
+  # Station: Muggendorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/muggendorf-24242000/messwerte
+  entity_id: wiesent_fo
+  source:
+    type: gkd_bayern
+
+- name: Aisch
+  # Station: Hallerndorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/hallerndorf-24263203/messwerte
+  entity_id: aisch_fo
+  source:
+    type: gkd_bayern
+
+# Landkreis Freyung-Grafenau (FRG)
+- name: Große Ohe
+  # Station: Taferlruck
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/taferlruck-17413000/messwerte
+  entity_id: grosse_ohe_frg
+  source:
+    type: gkd_bayern
+
+# Landkreis Freising (FS)
+- name: Moosach
+  # Station: Freising
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/freising-16518502/messwerte
+  entity_id: moosach_fs
+  source:
+    type: gkd_bayern
+
+- name: Amper
+  # Station: Neumühlschwaig
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/neumuehlschwaig-16609007/messwerte
+  entity_id: amper_fs
+  source:
+    type: gkd_bayern
+
+# Landkreis Garmisch-Partenkirchen (GAP)
+- name: Isar
+  # Station: Mittenwald
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/mittenwald-16000708/messwerte
+  entity_id: isar_gap
+  source:
+    type: gkd_bayern
+
+- name: Loisach
+  # Station: Eschenlohe Brücke
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/eschenlohe-bruecke-16404106
+  entity_id: loisach_eschenlohe_bruecke_gap
+  source:
+    type: gkd_bayern
+
+# Landkreis Günzburg (GZ)
+- name: Günz
+  # Station: Waldstetten
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/waldstetten-11584000/messwerte
+  entity_id: guenz_gz
+  source:
+    type: gkd_bayern
+
+- name: Mindel
+  # Station: Offingen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/offingen-11609000/messwerte
+  entity_id: mindel_gz
+  source:
+    type: gkd_bayern
+
+# Landkreis Haßberge (HAS)
+- name: Nassach
+  # Station: Römershofen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/roemershofen-24322506/messwerte
+  entity_id: nassach_has
+  source:
+    type: gkd_bayern
+
+# Stadt Hof (HO)
+- name: Sächsische Saale
+  # Station: Hof
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/hof-56001502/messwerte
+  entity_id: saechsische_saale_ho
+  source:
+    type: gkd_bayern
+
+# Main-Kinzig-Kreis (HU, HE)
+- name: Main
+  # Station: Krotzenburg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/krotzenburg-24080000/messwerte
+  entity_id: main_hu
+  source:
+    type: gkd_bayern
+
+- name: Kinzig
+  # Station: Hanau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/hanau-24783000/messwerte
+  entity_id: kinzig_hu
+  source:
+    type: gkd_bayern
+
+# Stadt Ingolstadt (IN)
+- name: Donau
+  # Station: Ingolstadt Luitpoldstr.
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/ingolstadt-luitpoldstr-10046105/messwerte
+  entity_id: donau_in
+  source:
+    type: gkd_bayern
+
+# Landkreis Kronach (KC)
+- name: Rodach
+  # Station: Erlabrück
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/erlabrueck-24141501/messwerte
+  entity_id: rodach_kc
+  source:
+    type: gkd_bayern
+
+- name: Kronach
+  # Station: Steinberg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/steinberg-24148001/messwerte
+  entity_id: kronach_kc
+  source:
+    type: gkd_bayern
+
+# Stadt Kempten (Allgäu) (KE)
+- name: Iller
+  # Station: Kempten
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/iller_lech/kempten-11402001/messwerte
+  entity_id: iller_ke
+  source:
+    type: gkd_bayern
+
+# Landkreis Kelheim (KEH)
+- name: Donau
+  # Station: Neustadt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/neustadt-10051105/messwerte
+  entity_id: donau_neustadt_keh
+  source:
+    type: gkd_bayern
+
+- name: Donau
+  # Station: Kelheim
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/kelheim-10053009/messwerte
+  entity_id: donau_kelheim_keh
+  source:
+    type: gkd_bayern
+
+- name: Donau
+  # Station: Oberndorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/oberndorf-10056302/messwerte
+  entity_id: donau_oberndorf_keh
+  source:
+    type: gkd_bayern
+
+- name: Abens
+  # Station: Mainburg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/mainburg-13321002/messwerte
+  entity_id: abens_mainburg_keh
+  source:
+    type: gkd_bayern
+
+- name: Abens
+  # Station: Aunkofen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/aunkofen-13322005/messwerte
+  entity_id: abens_aunkofen_keh
+  source:
+    type: gkd_bayern
+
+# Landkreis Bad Kissingen (KG)
+- name: Fränkische Saale
+  # Station: Bad Kissingen Prinzreg.-bau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/bad-kissingen-prinzreg-bau-24405002/messwerte
+  entity_id: fraenkische_saale_kg
+  source:
+    type: gkd_bayern
+
+- name: Lauer
+  # Station: Münnerstadt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/muennerstadt-24441301/messwerte
+  entity_id: lauer_kg
+  source:
+    type: gkd_bayern
+
+- name: Sinn
+  # Station: Bad Brückenau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/bad-brueckenau-24481000/messwerte
+  entity_id: sinn_kg
+  source:
+    type: gkd_bayern
+
+# Landkreis Kitzingen (KT)
+- name: Main
+  # Station: Astheim
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/astheim-24028000/messwerte
+  entity_id: main_kt
+  source:
+    type: gkd_bayern
+
+# Landkreis Kulmbach (KU)
+- name: Main
+  # Station: Mainleus
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/mainleus-24003009/messwerte
+  entity_id: main_ku
+  source:
+    type: gkd_bayern
+
+- name: Weißer Main
+  # Station: Ködnitz
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/koednitz-24110955/messwerte
+  entity_id: weisser_main_ku
+  source:
+    type: gkd_bayern
+
+# Landkreis Landshut (LA)
+- name: Isar
+  # Station: Landshut-Birket
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/landshut-birket-16007004/messwerte
+  entity_id: isar_la
+  source:
+    type: gkd_bayern
+
+- name: große Vils
+  # Station: Vilsbiburg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/vilsbiburg-17215007/messwerte
+  entity_id: grosse_vils_la
+  source:
+    type: gkd_bayern
+
+- name: kleine Vils
+  # Station: Dietelskirchen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/dietelskirchen-17225000/messwerte
+  entity_id: kleine_vils_la
+  source:
+    type: gkd_bayern
+
+# Landkreis Nürnberger Land (LAU)
+- name: Pegnitz
+  # Station: Güntersthal
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/regnitz/guentersthal-24222002/messwerte
+  entity_id: pegnitz_lau
+  source:
+    type: gkd_bayern
+
+# Landkreis Lichtenfels (LIF)
+- name: Main
+  # Station: Schwürbitz
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/schwuerbitz-24006007/messwerte
+  entity_id: main_lif
+  source:
+    type: gkd_bayern
+
+- name: Weismain
+  # Station: Weismain
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/weismain-24134007/messwerte
+  entity_id: weismain_lif
+  source:
+    type: gkd_bayern
+
+# Stadt München (M)
+- name: Isar
+  # Station: München
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/muenchen-16005701/messwerte
+  entity_id: isar_m
+  source:
+    type: gkd_bayern
+
+- name: Eisbach
+  # Station: München Himmelreichbrücke
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/muenchen-himmelreichbruecke-16515005/messwerte
+  entity_id: eisbach_m
+  source:
+    type: gkd_bayern
+
+- name: Schwabinger Bach
+  # Station: München Tierärztl. Hochschule
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/muenchen-tieraerztl-hochschule-16516008/messwerte
+  entity_id: schwabinger_bach_m
+  source:
+    type: gkd_bayern
+
+# Landkreis Miesbach (MB)
+- name: Weißach
+  # Station: Oberach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/oberach-18212004/messwerte
+  entity_id: weissach_mb
+  source:
+    type: gkd_bayern
+
+- name: Söllbach
+  # Station: Bad Wiessee
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/bad-wiessee-18218306/messwerte
+  entity_id: soellbach_mb
+  source:
+    type: gkd_bayern
+
+- name: Schlierach
+  # Station: Miesbach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/miesbach-18226009/messwerte
+  entity_id: schlierach_mb
+  source:
+    type: gkd_bayern
+
+- name: Leitzach
+  # Station: Stauden
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/stauden-18242005/messwerte
+  entity_id: leitzach_mb
+  source:
+    type: gkd_bayern
+
+# Landkreis Miltenberg (MIL)
+- name: Main
+  # Station: Faulbach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/faulbach-24060002/messwerte
+  entity_id: main_faulbach_mil
+  source:
+    type: gkd_bayern
+
+- name: Main
+  # Station: Kleinheubach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/kleinheubach-24064003/messwerte
+  entity_id: main_kleinheubach_mil
+  source:
+    type: gkd_bayern
+
+# Landkreis Main-Spessart (MSP)
+- name: Main
+  # Station: Steinbach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/steinbach-24050009/messwerte
+  entity_id: main_steinbach_msp
+  source:
+    type: gkd_bayern
+
+- name: Wern
+  # Station: Arnstein
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/arnstein-24382304/messwerte
+  entity_id: wern_arnstein_msp
+  source:
+    type: gkd_bayern
+
+- name: Wern
+  # Station: Sachsenheim
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/sachsenheim-24385007/messwerte
+  entity_id: wern_sachsenheim_msp
+  source:
+    type: gkd_bayern
+
+- name: Fränkische Saale
+  # Station: Wolfsmünster
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/wolfsmuenster-24409003/messwerte
+  entity_id: fraenkische_saale_msp
+  source:
+    type: gkd_bayern
+
+- name: Schondra
+  # Station: Gräfendorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/graefendorf-24473055/messwerte
+  entity_id: schondra_msp
+  source:
+    type: gkd_bayern
+
+- name: Sinn
+  # Station: Mittelsinn
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/mittelsinn-24482003/messwerte
+  entity_id: sinn_msp
+  source:
+    type: gkd_bayern
+
+- name: Hafenlohr
+  # Station: Breitfurt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/breitfurt-24561303/messwerte
+  entity_id: hafenlohr_msp
+  source:
+    type: gkd_bayern
+
+# Main-Taunus-Kreis (MTK, HE)
+- name: Main
+  # Station: Wertheim
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/wertheim-24056005/messwerte
+  entity_id: main_mtk
+  source:
+    type: gkd_bayern
+
+# Landkreis Mühldorf am Inn (MÜ)
+- name: Isen
+  # Station: Wörth
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/woerth-18382505/messwerte
+  entity_id: isen_mue
+  source:
+    type: gkd_bayern
+
+# Landkreis Neustadt a.d.Aisch-Bad Windsheim (NEA)
+- name: Aisch
+  # Station: Rappoldshofen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/rappoldshofen-24262007/messwerte
+  entity_id: aisch_nea
+  source:
+    type: gkd_bayern
+
+- name: Scheine
+  # Station: Scheinfeld
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/scheinfeld-24268535/messwerte
+  entity_id: scheine_nea
+  source:
+    type: gkd_bayern
+
+# Landkreis Rhön-Grabfeld (NES)
+- name: Fränkische Saale
+  # Station: Salz
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/salz-24403007/messwerte
+  entity_id: fraenkische_saale_nes
+  source:
+    type: gkd_bayern
+
+- name: Streu
+  # Station: Unsleben
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/unsleben-24422001/messwerte
+  entity_id: streu_nes
+  source:
+    type: gkd_bayern
+
+# Landkreis Neustadt an der Waldnaab (NEW)
+- name: Waldnaab
+  # Station: Windischeschenbach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/naab_regen/windischeschenbach-14101205/messwerte
+  entity_id: waldnaab_new
+  source:
+    type: gkd_bayern
+
+- name: Haidenaab
+  # Station: Wildenau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/naab_regen/wildenau-14209008/messwerte
+  entity_id: haidenaab_new
+  source:
+    type: gkd_bayern
+
+- name: Zottbach
+  # Station: Lohma
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/naab_regen/lohma-14368500/messwerte
+  entity_id: zottbach_new
+  source:
+    type: gkd_bayern
+
+# Landkreis Neu-Ulm (NU)
+- name: Donau
+  # Station: Neu-Ulm
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/neu-ulm-10026293/messwerte
+  entity_id: donau_nu
+  source:
+    type: gkd_bayern
+
+- name: Iller
+  # Station: Wiblingen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/wiblingen-11405000/messwerte
+  entity_id: iller_nu
+  source:
+    type: gkd_bayern
+
+# Landkreis Oberallgäu (OA)
+- name: Iller
+  # Station: Sonthofen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/iller_lech/sonthofen-11401009/messwerte
+  entity_id: iller_oa
+  source:
+    type: gkd_bayern
+
+- name: Wertach
+  # Station: Sebastianskapelle
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/iller_lech/sebastianskapelle-12402007/messwerte
+  entity_id: wertach_oa
+  source:
+    type: gkd_bayern
+
+- name: Wertach
+  # Station: Haslach Werksabfluss
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/iller_lech/haslach-werksabfluss-12404002/messwerte
+  entity_id: wertach_haslach_werksabfluss_oa
+  source:
+    type: gkd_bayern
+
+# Landkreis Ostallgäu (OAL)
+- name: Kirnach
+  # Station: Unterthingau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/iller_lech/unterthingau-12433102/messwerte
+  entity_id: kirnach_oal
+  source:
+    type: gkd_bayern
+
+# Landkreis Offenbach (OF, HE)
+- name: Main
+  # Station: Mainflingen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/mainflingen-24075000/messwerte
+  entity_id: main_of
+  source:
+    type: gkd_bayern
+
+# Landkreis Passau (PA)
+- name: Donau
+  # Station: Vilshofen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/vilshofen-10089006/messwerte
+  entity_id: donau_vilshofen_pa
+  source:
+    type: gkd_bayern
+
+- name: Donau
+  # Station: Passau-Donau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/passau-donau-10091008/messwerte
+  entity_id: donau_passau_donau_pa
+  source:
+    type: gkd_bayern
+
+- name: Donau
+  # Station: Jochenstein Messstation
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/jochenstein-messstation-10097809/messwerte
+  entity_id: donau_jochenstein_messstation_pa
+  source:
+    type: gkd_bayern
+
+- name: Donau
+  # Station: Dandlbachmündung
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/dandlbachmuendung-10098007/messwerte
+  entity_id: donau_dandlbachmuendung_pa
+  source:
+    type: gkd_bayern
+
+- name: Vils
+  # Station: Grafenmühle
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/grafenmuehle-17207508/messwerte
+  entity_id: vils_pa
+  source:
+    type: gkd_bayern
+
+- name: Ilz
+  # Station: Kalteneck
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/kalteneck-17406005/messwerte
+  entity_id: ilz_pa
+  source:
+    type: gkd_bayern
+
+- name: Inn
+  # Station: Passau Ingling
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/passau-ingling-18008008/messwerte
+  entity_id: inn_passau_ingling_pa
+  source:
+    type: gkd_bayern
+
+- name: Inn
+  # Station: Passau Marienbrücke
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/passau-marienbruecke-18009000/messwerte
+  entity_id: inn_passau_marienbruecke_pa
+  source:
+    type: gkd_bayern
+
+- name: Rott
+  # Station: Ruhstorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/ruhstorf-18808004/messwerte
+  entity_id: rott_pa
+  source:
+    type: gkd_bayern
+
+# Landkreis Pfaffenhofen a.d.Ilm (PAF)
+- name: Paar
+  # Station: Manching (Ort)
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/manching-ort-13208000/messwerte
+  entity_id: paar_manching_ort_paf
+  source:
+    type: gkd_bayern
+
+- name: Paar
+  # Station: Manching Bahnbrücke
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/manching-bahnbruecke-13208509/messwerte
+  entity_id: paar_manching_bahnbruecke_paf
+  source:
+    type: gkd_bayern
+
+- name: Wolnzach
+  # Station: Wolnzach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/wolnzach-13327855/messwerte
+  entity_id: wolnzach_paf
+  source:
+    type: gkd_bayern
+
+# Stadt Regensburg (R)
+- name: Donau
+  # Station: Regensburg Pfaffenstein
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/regensburg-pfaffenstein-10060455/messwerte
+  entity_id: donau_regensburg_pfaffenstein_r
+  source:
+    type: gkd_bayern
+
+- name: Donau
+  # Station: Schwabelweis
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/schwabelweis-10062000/messwerte
+  entity_id: donau_schwabelweis_r
+  source:
+    type: gkd_bayern
+
+- name: Naab
+  # Station: Heitzenhofen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/heitzenhofen-14008006/messwerte
+  entity_id: naab_r
+  source:
+    type: gkd_bayern
+
+- name: Otterbach
+  # Station: Hammermühle
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/hammermuehle-15315000/messwerte
+  entity_id: otterbach_r
+  source:
+    type: gkd_bayern
+
+# Landkreis Regen (REG)
+- name: Schwarzer Regen
+  # Station: Teisnach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/teisnach-15212008/messwerte
+  entity_id: schwarzer_regen_reg
+  source:
+    type: gkd_bayern
+
+- name: Großer Regen
+  # Station: Zwiesel
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/zwiesel-15214003/messwerte
+  entity_id: grosser_regen_reg
+  source:
+    type: gkd_bayern
+
+# Landkreis Roth (RH)
+- name: Schwarzach
+  # Station: Mettendorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/mettendorf-13465002/messwerte
+  entity_id: schwarzach_rh
+  source:
+    type: gkd_bayern
+
+- name: Fränkische Rezat
+  # Station: Wernfels
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/wernfels-24212450/messwerte
+  entity_id: fraenkische_rezat_rh
+  source:
+    type: gkd_bayern
+
+- name: Schwäbische Rezat
+  # Station: Mühlstetten
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/muehlstetten-24214004/messwerte
+  entity_id: schwaebische_rezat_rh
+  source:
+    type: gkd_bayern
+
+- name: Aurach
+  # Station: Rothaurach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/kelheim/rothaurach-24215903/messwerte
+  entity_id: aurach_rh
+  source:
+    type: gkd_bayern
+
+# Landkreis Rosenheim (RO)
+- name: Inn
+  # Station: Oberaudorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/oberaudorf-18000403/messwerte
+  entity_id: inn_oberaudorf_ro
+  source:
+    type: gkd_bayern
+
+- name: Inn
+  # Station: Rosenheim o.d. Mangfallmdg.
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/rosenheim-o-d-mangfallmdg-18001508/messwerte
+  entity_id: inn_rosenheim_o_d_mangfallmdg_ro
+  source:
+    type: gkd_bayern
+
+- name: Inn
+  # Station: Wasserburg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/wasserburg-18003004/messwerte
+  entity_id: inn_wasserburg_ro
+  source:
+    type: gkd_bayern
+
+- name: Mangfall
+  # Station: Feldolling
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/feldolling-18204006/messwerte
+  entity_id: mangfall_feldolling_ro
+  source:
+    type: gkd_bayern
+
+- name: Mangfall
+  # Station: Bad Aibling Willinger Brücke
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/bad-aibling-willinger-bruecke-18205985/messwerte
+  entity_id: mangfall_bad_aibling_willinger_bruecke_ro
+  source:
+    type: gkd_bayern
+
+- name: Kaltenbach
+  # Station: Hohenofen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/hohenofen-18285507/messwerte
+  entity_id: kaltenbach_ro
+  source:
+    type: gkd_bayern
+
+- name: Aubach
+  # Station: Au
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/au-18286000/messwerte
+  entity_id: aubach_ro
+  source:
+    type: gkd_bayern
+
+- name: Hammerbach
+  # Station: Rosenheim
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/rosenheim-18312009/messwerte
+  entity_id: hammerbach_ro
+  source:
+    type: gkd_bayern
+
+- name: Bernauer Ache
+  # Station: Bernau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/bernau-18461257/messwerte
+  entity_id: bernauer_ache_ro
+  source:
+    type: gkd_bayern
+
+- name: Prien
+  # Station: Aschau
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/aschau-18462205/messwerte
+  entity_id: prien_ro
+  source:
+    type: gkd_bayern
+
+# Landkreis Schwandorf (SAD)
+- name: Naab
+  # Station: Unterköblitz
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/naab_regen/unterkoeblitz-14002305/messwerte
+  entity_id: naab_sad
+  source:
+    type: gkd_bayern
+
+- name: Regen
+  # Station: Marienthal
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/marienthal-15207507/messwerte
+  entity_id: regen_sad
+  source:
+    type: gkd_bayern
+
+# Landkreis Straubing-Bogen / Stadt Straubing (SR)
+- name: Donau
+  # Station: Straubing
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/straubing-10074009/messwerte
+  entity_id: donau_sr
+  source:
+    type: gkd_bayern
+
+- name: Donau
+  # Station: Pfelling Messstation
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/passau/pfelling-messstation-10077900/messwerte
+  entity_id: donau_pfelling_messstation_sr
+  source:
+    type: gkd_bayern
+
+# Landkreis Starnberg (STA)
+- name: Würm
+  # Station: Leutstetten
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/leutstetten-16665008/messwerte
+  entity_id: wuerm_sta
+  source:
+    type: gkd_bayern
+
+# Stadt/Landkreis Schweinfurt (SW)
+- name: Main
+  # Station: Schweinfurt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/schweinfurt-24022003/messwerte
+  entity_id: main_sw
+  source:
+    type: gkd_bayern
+
+- name: Volkach
+  # Station: Brünnstadt
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/bruennstadt-24338007/messwerte
+  entity_id: volkach_sw
+  source:
+    type: gkd_bayern
+
+# Landkreis Tirschenreuth (TIR)
+- name: Fichtelnaab
+  # Station: Erbendorf
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/erbendorf-14124007/messwerte
+  entity_id: fichtelnaab_tir
+  source:
+    type: gkd_bayern
+
+# Landkreis Traunstein (TS)
+- name: Alz
+  # Station: Seebruck
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/seebruck-18403002/messwerte
+  entity_id: alz_seebruck_ts
+  source:
+    type: gkd_bayern
+
+- name: Alz
+  # Station: Altenmarkt o.d. Traun
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/altenmarkt-o-d-traun-18405008/messwerte
+  entity_id: alz_altenmarkt_o_d_traun_ts
+  source:
+    type: gkd_bayern
+
+- name: Tiroler Achen
+  # Station: Staudach
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/staudach-18454003/messwerte
+  entity_id: tiroler_achen_ts
+  source:
+    type: gkd_bayern
+
+# Landkreis Bad Tölz-Wolfratshausen (TÖL)
+- name: Isar
+  # Station: Lenggries
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/lenggries-16003003/messwerte
+  entity_id: isar_toel
+  source:
+    type: gkd_bayern
+
+- name: Isar
+  # Station: Bad Tölz B472
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/bad-toelz-b472-16003207/messwerte
+  entity_id: isar_bad_toelz_b472_toel
+  source:
+    type: gkd_bayern
+
+- name: Isar
+  # Station: Puppling
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/puppling-16004403/messwerte
+  entity_id: isar_puppling_toel
+  source:
+    type: gkd_bayern
+
+- name: Rißbach
+  # Station: Rißbachklamm
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/rissbachklamm-16145008/messwerte
+  entity_id: rissbach_toel
+  source:
+    type: gkd_bayern
+
+- name: Loisach
+  # Station: Beuerberg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/beuerberg-16408504/messwerte
+  entity_id: loisach_toel
+  source:
+    type: gkd_bayern
+
+# Landkreis Weilheim-Schongau (WM)
+- name: Illach
+  # Station: Engen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/engen-12335001/messwerte
+  entity_id: illach_wm
+  source:
+    type: gkd_bayern
+
+- name: Ammer
+  # Station: Peißenberg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/peissenberg-16612001/messwerte
+  entity_id: ammer_peissenberg_wm
+  source:
+    type: gkd_bayern
+
+- name: Ammer
+  # Station: Weilheim
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/weilheim-16613004/messwerte
+  entity_id: ammer_weilheim_wm
+  source:
+    type: gkd_bayern
+
+# Landkreis Wunsiedel i.F. (WUN)
+- name: Eger
+  # Station: Marktleuthen
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/elbe/marktleuthen-53201505/messwerte
+  entity_id: eger_wun
+  source:
+    type: gkd_bayern
+
+# Stadt/Landkreis Würzburg (WÜ)
+- name: Main
+  # Station: Würzburg
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/wuerzburg-24042000/messwerte
+  entity_id: main_wue
+  source:
+    type: gkd_bayern
+
+- name: Main
+  # Station: Erlabrunn Messstation
+  url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/main_unten/erlabrunn-messstation-24043800/messwerte
+  entity_id: main_erlabrunn_messstation_wue
+  source:
+    type: gkd_bayern
+
+
