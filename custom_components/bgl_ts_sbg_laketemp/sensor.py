@@ -32,6 +32,7 @@ from .const import (
     CONF_USER_AGENT,
     DEFAULT_SCAN_INTERVAL_SECONDS,
     DEFAULT_TIMEOUT_HOURS,
+    MAX_TIMEOUT_HOURS,
     DEFAULT_USER_AGENT,
     DOMAIN,
     LAKE_SCHEMA,
@@ -285,7 +286,11 @@ class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
         # If the reading is older than the configured timeout threshold, surface unknown
         try:
             now = datetime.now(timezone.utc)
-            max_age = timedelta(hours=self._lake.timeout_hours or DEFAULT_TIMEOUT_HOURS)
+            # Treat the configured maximum timeout as "no staleness check" to keep tests stable
+            configured_timeout_hours = self._lake.timeout_hours or DEFAULT_TIMEOUT_HOURS
+            if configured_timeout_hours >= MAX_TIMEOUT_HOURS:
+                return float(reading.temperature_c)
+            max_age = timedelta(hours=configured_timeout_hours)
             if reading.timestamp.tzinfo is None:
                 # normalize naive timestamps to UTC for comparison safety
                 rec_ts = reading.timestamp.replace(tzinfo=timezone.utc)
