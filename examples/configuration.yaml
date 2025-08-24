@@ -14,96 +14,120 @@ logger:
   logs:
     homeassistant.components.cloud: debug
     custom_components.bgl_ts_sbg_laketemp: debug
-
+ 
 bgl_ts_sbg_laketemp:
   lakes:
-
     # GKD Bayern: one table per lake. Each lake has its own URL.
-    # The dataset refresh interval is the minimum scan_interval across GKD Bayern lakes.
+    # Per-lake polling; each lake has its own scan_interval (no shared dataset).
+    # Landkreis Berchtesgadener Land (BGL)
     - name: Abtsdorfer See
+      # Station: Seethal
       url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte
-      entity_id: abtsdorfer_see_v3
-      scan_interval: 3600
+      entity_id: abtsdorfer_see_bgl
+      scan_interval: 7200
       timeout_hours: 24
       source:
         type: gkd_bayern
 
     - name: Königssee
+      # Station: Königssee
       url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/koenigssee-18624806/messwerte
-      entity_id: koenigssee_v3
+      entity_id: koenigssee_bgl
+      scan_interval: 1800
+      timeout_hours: 12
       source:
         type: gkd_bayern
 
     - name: Waginger See
-      url: https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/buchwinkel-18682507/messwerte
-      entity_id: waginger_see_v3
+      # Station: Buchwinkel
+      url: https://www.gkd.bayern.de/de/seen/wassertemperatur/isar/buchwinkel-18682507/messwerte
+      entity_id: waginger_see_ts
+      scan_interval: 3600
+      timeout_hours: 12
+      source:
+        type: gkd_bayern
+
+    - name: Salzach
+      # Station: Laufen Siegerstetter Keller
+      url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/inn/laufen-siegerstetter-keller-18602009/messwerte
+      entity_id: salzach_bgl
+      scan_interval: 3600
+      timeout_hours: 12
+      source:
+        type: gkd_bayern
+
+    - name: Saalach
+      # Station: Unterjettenberg
+      url: https://www.gkd.bayern.de/de/fluesse/wassertemperatur/isar/unterjettenberg-18642003/messwerte
+      entity_id: saalach_bgl
+      scan_interval: 3600
+      timeout_hours: 12
       source:
         type: gkd_bayern
 
     # Hydro OOE: shared dataset; one ZRXP download for all configured Hydro OOE lakes.
     # The dataset refresh interval is the minimum scan_interval across Hydro OOE lakes.
-    - name: Irrsee
-      entity_id: irrsee_v3
-      source:
-        type: hydro_ooe
-        options:
-          station_id: "5005"
-
     - name: Mondsee
-      entity_id: mondsee_v3
+      entity_id: mondsee_limnolog_institut
+      scan_interval: 3600
+      timeout_hours: 12
       source:
         type: hydro_ooe
         options:
           station_id: "5020"
 
-    - name: Attersee
-      entity_id: attersee_v3
-      timeout_hours: 336
+    - name: Irrsee
+      entity_id: zeller_see_irrsee_zell_am_moos
+      scan_interval: 3600
+      timeout_hours: 12
       source:
         type: hydro_ooe
         options:
-          station_id: "5290"
-
-    - name: Traunsee
-      entity_id: traunsee_v3
-      source:
-        type: hydro_ooe
-        options:
-          station_id: "4590"
+          station_id: "5005"
 
     # Salzburg OGD: shared dataset; one TXT download for all configured Salzburg OGD lakes.
     # The dataset refresh interval is the minimum scan_interval across Salzburg OGD lakes.
-    - name: Fuschlsee
-      entity_id: fuschlsee_v3
-      source:
-        type: salzburg_ogd
-        options:
-          lake_name: Fuschlsee
-
-    - name: Wolfgangsee
-      entity_id: wolfgangsee_v3
-      source:
-        type: salzburg_ogd
-        options:
-          lake_name: Wolfgangsee
-
     - name: Mattsee
-      entity_id: mattsee_v3
+      entity_id: mattsee
+      scan_interval: 3600
+      timeout_hours: 12
       source:
         type: salzburg_ogd
         options:
           lake_name: Mattsee
 
+    - name: Obertrumer See
+      entity_id: obertrumer_see
+      scan_interval: 3600
+      timeout_hours: 12
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Obertrumer See
+
     - name: Wallersee
-      entity_id: wallersee_v3
+      entity_id: wallersee
+      scan_interval: 3600
+      timeout_hours: 12
       source:
         type: salzburg_ogd
         options:
           lake_name: Wallersee
 
-    - name: Obertrumer See
-      entity_id: obertrumer_see_v3
+    - name: Wolfgangsee
+      entity_id: wolfgangsee
+      scan_interval: 3600
+      timeout_hours: 12
       source:
         type: salzburg_ogd
         options:
-          lake_name: Obertrumer See
+          lake_name: Wolfgangsee
+
+    - name: Fuschlsee
+      entity_id: fuschlsee
+      scan_interval: 3600
+      timeout_hours: 12
+      source:
+        type: salzburg_ogd
+        options:
+          lake_name: Fuschlsee
