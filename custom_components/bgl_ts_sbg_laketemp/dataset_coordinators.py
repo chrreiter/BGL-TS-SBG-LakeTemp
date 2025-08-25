@@ -648,18 +648,38 @@ class SalzburgOGDDatasetCoordinator(BaseDatasetCoordinator):
             min_scan,
         )
 
-        # Warn about missing members
+        # Warn about missing members; carry forward previous readings if available
         expected_keys = {self.get_lookup_key(cfg) for cfg in self._members_by_entity_id.values()}
         missing = expected_keys - set(result.keys())
         if missing:
+            # Snapshot previous coordinator mapping (if any) to allow carry-forward
+            previous_map: Dict[str, TemperatureReading] = {}
+            try:
+                if isinstance(self.coordinator.data, dict) and self.coordinator.data is not None:
+                    previous_map = dict(self.coordinator.data)
+            except Exception:
+                previous_map = {}
+
             for cfg in self._members_by_entity_id.values():
                 key = self.get_lookup_key(cfg)
                 if key in missing:
-                    _LOGGER.warning(
-                        "SalzburgOGD dataset missing lake in latest data: name=%s (key=%s)",
-                        cfg.name,
-                        key,
-                    )
+                    prev_reading = previous_map.get(key)
+                    if prev_reading is not None:
+                        # Retain last known value silently (debug only) to allow timeout_hours to control availability
+                        _LOGGER.debug(
+                            "SalzburgOGD dataset omitted lake; carrying forward previous reading: name=%s (key=%s)",
+                            cfg.name,
+                            key,
+                        )
+                        # Do not mutate previous objects; reuse as-is (timestamp governs staleness)
+                        result[key] = prev_reading
+                    else:
+                        # No previous data to carry forward; warn so user can investigate
+                        _LOGGER.warning(
+                            "SalzburgOGD dataset missing lake with no prior reading: name=%s (key=%s)",
+                            cfg.name,
+                            key,
+                        )
 
         return result
 

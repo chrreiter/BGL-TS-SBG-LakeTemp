@@ -265,10 +265,25 @@ class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
-        # Aggregated dataset: available only if coordinator succeeded AND this lake has data in the mapping
+        # Aggregated dataset: available only if coordinator succeeded AND this lake has a non-stale reading
         data = self.coordinator.data
         if isinstance(data, dict) and self._aggregated_lookup_key:
-            return bool(self.coordinator.last_update_success and (self._aggregated_lookup_key in (data or {})))
+            if not self.coordinator.last_update_success:
+                return False
+            reading: TemperatureReading | None = (data or {}).get(self._aggregated_lookup_key)
+            if reading is None:
+                return False
+            try:
+                configured_timeout_hours = self._lake.timeout_hours or DEFAULT_TIMEOUT_HOURS
+                if configured_timeout_hours >= MAX_TIMEOUT_HOURS:
+                    return True
+                now = datetime.now(timezone.utc)
+                max_age = timedelta(hours=configured_timeout_hours)
+                rec_ts = reading.timestamp.replace(tzinfo=timezone.utc) if reading.timestamp.tzinfo is None else reading.timestamp.astimezone(timezone.utc)
+                age = now - rec_ts
+                return age <= max_age
+            except Exception:
+                return False
         # Per-lake: rely on coordinator success
         return self.coordinator.last_update_success
 
