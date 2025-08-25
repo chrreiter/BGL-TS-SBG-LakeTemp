@@ -4,7 +4,7 @@
   "documentation": "https://github.com/chrreiter/BGL-TS-SBG-LakeTemp",
   "issue_tracker": "https://github.com/chrreiter/BGL-TS-SBG-LakeTemp/issues",
   "codeowners": ["@chrreiter"],
-  "version": "0.1.0",
+  "version": "0.1.1",
   "iot_class": "cloud_polling",
   "requirements": [
     "beautifulsoup4==4.12.3",
