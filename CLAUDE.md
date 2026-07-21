@@ -63,7 +63,7 @@ RUN_ONLINE=1 python -m pytest -q -m online   # opt-in real-HTTP tests
 
 ### ⚠️ Dependency gotcha (important)
 `aioresponses` (0.7.9, the latest) is **incompatible with aiohttp ≥ 3.12** — you'll see `TypeError: ClientResponse.__init__() missing ... 'stream_writer'` and the whole offline suite fails. This is a **test-tooling** issue, not a bug in this repo.
-- Fix: use the pinned `aiohttp==3.11.11` from `requirements-dev.txt`.
+- Fix: use the pinned `aiohttp==3.11.18` from `requirements-dev.txt` (latest patch in the aioresponses-compatible 3.11.x line).
 - Do **not** "fix" it by loosening the runtime pin in `manifest.json` — HA ships its own aiohttp at runtime; `aiohttp>=3.9.1` there is correct. The constraint is a test-only concern.
 
 ## Adding a new data source
