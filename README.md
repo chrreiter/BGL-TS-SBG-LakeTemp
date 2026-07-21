@@ -41,7 +41,7 @@ The integration creates one sensor per configured lake. Shared datasets (Hydro O
 
 - GKD Bayern: list of known station pages — see [`examples/GKDBayern_stations.yaml`](examples/GKDBayern_stations.yaml)
 - Hydro OOE (Upper Austria): definitive station list (SANR, names) — see [`examples/HydroOOE_stations.yaml`](examples/HydroOOE_stations.yaml)
-- Salzburg OGD (Hydrografie Seen): lake list — see [`examples/SalzburgODG_stations.yaml`](examples/SalzburgODG_stations.yaml)
+- Salzburg OGD (Hydrografie Seen): lake list — see [`examples/SalzburgOGD_stations.yaml`](examples/SalzburgOGD_stations.yaml)
 
 
 ### Configuration reference
