@@ -126,14 +126,17 @@ Recommended local workflow (PowerShell on Windows):
    - `\.venv\Scripts\Activate.ps1`
 2) Install test dependencies (plus runtime libs used by the scrapers)
    - `python -m pip install -U pip`
-   - `pip install pytest pytest-asyncio aioresponses tzdata beautifulsoup4==4.12.3 aiohttp>=3.9.1`
+   - `pip install -r requirements-dev.txt`
 3) Run tests
    - `pytest -q`
 
+Home Assistant does **not** need to be installed: `tests/conftest.py` stubs the small HA surface the integration uses.
+
 Notes
+- Versions in `requirements-dev.txt` are pinned deliberately. In particular `aiohttp` is held at `3.11.11` because `aioresponses` (the HTTP mock used by the offline tests) is incompatible with `aiohttp >= 3.12` (it raises `ClientResponse.__init__() missing ... 'stream_writer'`). This is a test-tooling constraint only; the runtime requirement in `manifest.json` stays `aiohttp>=3.9.1` because Home Assistant supplies aiohttp at runtime.
 - If you see async/sockets or Home Assistant plugin related issues, run with a clean plugin set:
   - `$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = '1'` then `pytest -q`
-- If you see a ZoneInfo error for `Europe/Berlin`, ensure `tzdata` is installed in your venv (see step 2)
+- If you see a ZoneInfo error for `Europe/Berlin`, ensure `tzdata` is installed in your venv (included in `requirements-dev.txt`)
 
 ### Online tests (real HTTP; opt‑in)
 
