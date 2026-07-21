@@ -1,0 +1,26 @@
+# Development / test dependencies for BGL-TS-SBG-LakeTemp.
+#
+# Home Assistant itself is NOT required: tests/conftest.py stubs the small HA
+# surface the integration touches. Install with:
+#   pip install -r requirements-dev.txt
+#
+# NOTE on aiohttp pin: aioresponses 0.7.9 (latest) is incompatible with
+# aiohttp >= 3.12 (raises "ClientResponse.__init__() missing ... 'stream_writer'"
+# and fails the whole offline suite). 3.11.11 is a known-good pairing. This pin
+# is test-tooling only; the runtime requirement in manifest.json (aiohttp>=3.9.1)
+# is intentionally looser because Home Assistant provides aiohttp at runtime.
+
+# Test runner
+pytest==9.1.1
+pytest-asyncio==1.4.0
+
+# HTTP mocking for offline tests
+aioresponses==0.7.9
+
+# Runtime libraries the scrapers import (mirrors manifest.json, pinned for repeatable test runs)
+aiohttp==3.11.11
+beautifulsoup4==4.12.3
+voluptuous==0.16.0
+
+# Timezone data (needed for Europe/Berlin / Europe/Vienna ZoneInfo lookups on some platforms)
+tzdata>=2024.1
