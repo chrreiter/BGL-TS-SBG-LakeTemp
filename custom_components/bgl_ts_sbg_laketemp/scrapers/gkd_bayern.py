@@ -19,6 +19,7 @@ Design goals:
 from dataclasses import dataclass
 from datetime import datetime
 import logging
+import re
 from typing import Sequence
 from zoneinfo import ZoneInfo
 
@@ -61,6 +62,16 @@ class NoDataError(ScraperError):
 
 
 BERLIN_TZ = ZoneInfo("Europe/Berlin")
+
+
+# Tolerant extraction: the GKD relaunch (2026) appended " Uhr" to date cells.
+# Matching a substring rather than the full cell keeps us resilient to further
+# suffix/prefix churn (weekday labels, footnote markers, provisional flags).
+_DATETIME_RE = re.compile(
+    r"(?P<day>\d{1,2})\.(?P<month>\d{1,2})\.(?P<year>\d{4})"
+    r"\D{1,4}"
+    r"(?P<hour>\d{1,2}):(?P<minute>\d{2})(?::(?P<second>\d{2}))?"
+)
 
 
 @dataclass(frozen=True)
@@ -282,6 +293,9 @@ class GKDBayernScraper(AsyncSessionMixin):
             body = chosen_table.find("tbody") or chosen_table
             rows = body.find_all("tr") if body else []
             records: list[GKDBayernRecord] = []
+            # Keep a few rejected samples so a NoDataError can carry evidence of
+            # what the page actually served (see the diagnostic raise below).
+            rejected: list[tuple[str, str]] = []
 
             for row in rows:
                 cells = row.find_all(["td", "th"])  # Some tables may not use <th> exclusively for headers
@@ -299,8 +313,15 @@ class GKDBayernScraper(AsyncSessionMixin):
                     ts = GKDBayernScraper._parse_german_datetime(date_text)
                     temp_c = GKDBayernScraper._parse_temperature_c(temp_text)
                 except ValueError:
-                    # Skip unparseable rows, but keep parsing subsequent rows
-                    _LOGGER.debug(
+                    # Skip unparseable rows, but keep parsing subsequent rows.
+                    # Log the first skip of a parse at WARNING (a likely format
+                    # change worth noticing); subsequent skips stay at DEBUG to
+                    # avoid flooding on a legitimately noisy page.
+                    if len(rejected) < 3:
+                        rejected.append((date_text, temp_text))
+                    level = logging.WARNING if len(rejected) == 1 else logging.DEBUG
+                    _LOGGER.log(
+                        level,
                         "%s",
                         kv(
                             component="scraper.gkd_bayern",
@@ -317,7 +338,12 @@ class GKDBayernScraper(AsyncSessionMixin):
             op.set(tables=len(candidate_tables), rows=len(rows), records=len(records))
 
             if not records:
-                raise NoDataError("No measurement rows parsed from table")
+                raise NoDataError(
+                    "No measurement rows parsed from table "
+                    f"(tables={len(candidate_tables)}, rows={len(rows)}, "
+                    f"rejected_samples={rejected!r}) — "
+                    "the page structure or cell format likely changed"
+                )
 
             return records
 
@@ -374,11 +400,20 @@ class GKDBayernScraper(AsyncSessionMixin):
         Returns:
             str: Cleaned string.
         """
-        return " ".join(text.split()).strip()
+        # ``str.split()`` does not treat U+00A0 (nbsp) or U+202F (narrow nbsp)
+        # as whitespace. Relaunched CMS templates commonly emit ``&nbsp;`` before
+        # unit labels, so normalize those to regular spaces first.
+        normalized = text.replace("\u00a0", " ").replace("\u202f", " ")
+        return " ".join(normalized.split()).strip()
 
     @staticmethod
     def _parse_german_datetime(text: str) -> datetime:
-        """Parse a German-style datetime string like '07.08.2025 16:00'.
+        """Parse a German-style datetime string like '19.07.2026 21:00 Uhr'.
+
+        The GKD Bayern relaunch (2026) appended a trailing ``" Uhr"`` to date
+        cells. Rather than matching the full string, a tolerant regex extracts
+        the date/time substring so incidental suffixes/prefixes do not break
+        parsing.
 
         Args:
             text: Date/time string in German formats.
@@ -387,21 +422,19 @@ class GKDBayernScraper(AsyncSessionMixin):
             datetime: Timezone-aware datetime in Europe/Berlin.
 
         Raises:
-            ValueError: If none of the supported formats match.
+            ValueError: If no date/time substring can be extracted.
         """
 
-        # Remove potential trailing labels or non-breaking spaces
         cleaned = GKDBayernScraper._clean_text(text)
-        # Support cases where seconds might be present, though uncommon on these pages
-        fmt_candidates = ["%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M"]
-        last_error: Exception | None = None
-        for fmt in fmt_candidates:
-            try:
-                dt_naive = datetime.strptime(cleaned, fmt)
-                return dt_naive.replace(tzinfo=BERLIN_TZ)
-            except Exception as exc:  # noqa: BLE001 - try next format
-                last_error = exc
-        raise ValueError(f"Unrecognized date/time format: {text!r}; last_error={last_error}")
+        match = _DATETIME_RE.search(cleaned)
+        if match is None:
+            raise ValueError(f"Unrecognized date/time format: {text!r}")
+        g = match.groupdict()
+        naive = datetime(
+            int(g["year"]), int(g["month"]), int(g["day"]),
+            int(g["hour"]), int(g["minute"]), int(g["second"] or 0),
+        )
+        return naive.replace(tzinfo=BERLIN_TZ)
 
     @staticmethod
     def _parse_temperature_c(text: str) -> float:

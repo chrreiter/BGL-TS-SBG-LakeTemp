@@ -26,6 +26,7 @@ from custom_components.bgl_ts_sbg_laketemp.scrapers.gkd_bayern import (
 
 
 FIXTURE_PATH = pathlib.Path(__file__).parent / "fixtures" / "gkd_bayern_table_sample.html"
+FIXTURE_PATH_2026 = pathlib.Path(__file__).parent / "fixtures" / "gkd_bayern_table_sample_2026.html"
 
 
 # Test: Fixture latest record is returned
@@ -212,5 +213,123 @@ async def test_deduplication_and_sorting() -> None:
             assert len(records) == 3
             assert [r.timestamp.hour for r in records] == [14, 15, 16]
             assert records[-1].temperature_c == 23.1
+
+
+# ---- CR-001: GKD Bayern site relaunch (2026) ----
+
+
+# T1 — regression, new relaunch cell format with trailing " Uhr"
+@pytest.mark.asyncio
+async def test_parses_relaunched_uhr_suffix_format() -> None:
+    """GKD relaunch 2026: date cells carry a trailing ' Uhr'."""
+    html = """
+    <html><body>
+      <table>
+        <thead><tr><th>Datum</th><th>Wassertemperatur [°C]</th></tr></thead>
+        <tbody>
+          <tr><td>19.07.2026 20:45 Uhr</td><td>20,1</td></tr>
+          <tr><td>19.07.2026 21:00 Uhr</td><td>20,0</td></tr>
+        </tbody>
+      </table>
+    </body></html>
+    """
+    records = GKDBayernScraper.parse_html_table(html)
+    assert len(records) == 2
+    assert records[-1].temperature_c == 20.0
+    assert records[-1].timestamp.hour == 21
+
+
+# T2 — backward compatibility: legacy cells without the " Uhr" suffix still parse
+@pytest.mark.asyncio
+async def test_parses_legacy_format_without_suffix() -> None:
+    """Pre-relaunch cells (no ' Uhr') must not regress; not every station migrated."""
+    html = """
+    <html><body>
+      <table>
+        <thead><tr><th>Datum</th><th>Wassertemperatur [°C]</th></tr></thead>
+        <tbody>
+          <tr><td>19.07.2026 20:45</td><td>20,1</td></tr>
+          <tr><td>19.07.2026 21:00</td><td>20,0</td></tr>
+        </tbody>
+      </table>
+    </body></html>
+    """
+    records = GKDBayernScraper.parse_html_table(html)
+    assert len(records) == 2
+    assert records[-1].temperature_c == 20.0
+    assert records[-1].timestamp.hour == 21
+
+
+# T3 — NBSP variant between time and the " Uhr" label
+@pytest.mark.asyncio
+async def test_parses_uhr_suffix_with_nbsp() -> None:
+    """A non-breaking space before 'Uhr' (common in relaunched CMS) must parse."""
+    html = """
+    <html><body>
+      <table>
+        <thead><tr><th>Datum</th><th>Wassertemperatur [°C]</th></tr></thead>
+        <tbody>
+          <tr><td>19.07.2026 21:00 Uhr</td><td>20,0 °C</td></tr>
+        </tbody>
+      </table>
+    </body></html>
+    """
+    records = GKDBayernScraper.parse_html_table(html)
+    assert len(records) == 1
+    assert records[0].temperature_c == 20.0
+    assert records[0].timestamp.hour == 21
+
+
+# T4 — negative cases must still be rejected (guards against an over-permissive regex)
+@pytest.mark.parametrize(
+    "value",
+    ["weitere Messwerte", "19.07.2026", "-", "", "kein Datum"],
+)
+def test_datetime_parser_rejects_non_datetime(value: str) -> None:
+    with pytest.raises(ValueError):
+        GKDBayernScraper._parse_german_datetime(value)
+
+
+# C2 — NoDataError carries rejected row samples for self-diagnosis
+@pytest.mark.asyncio
+async def test_nodata_error_message_includes_rejected_samples() -> None:
+    """When every row fails to parse, the error must carry evidence of what was served."""
+    url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
+    html_changed = """
+    <html><body>
+      <table>
+        <thead><tr><th>Datum</th><th>Wassertemperatur [°C]</th></tr></thead>
+        <tbody>
+          <tr><td>2026-07-19T21:00</td><td>20,0</td></tr>
+          <tr><td>2026-07-19T20:45</td><td>20,1</td></tr>
+        </tbody>
+      </table>
+    </body></html>
+    """
+    with aioresponses() as mocked:
+        mocked.get(url_tab, status=200, body=html_changed)
+        async with GKDBayernScraper(url) as scraper:
+            with pytest.raises(NoDataError) as exc_info:
+                await scraper.fetch_latest()
+    message = str(exc_info.value)
+    assert "rejected_samples=" in message
+    assert "2026-07-19T21:00" in message
+
+
+# T5 — full relaunched page (chrome, breadcrumb, Hinweis, nbsp, ' Uhr') parses end-to-end
+@pytest.mark.asyncio
+async def test_parses_full_relaunched_2026_fixture() -> None:
+    url = "https://www.gkd.bayern.de/de/seen/wassertemperatur/inn/seethal-18673955/messwerte"
+    url_tab = url.rstrip("/") + "/tabelle"
+    html = FIXTURE_PATH_2026.read_text(encoding="utf-8")
+    with aioresponses() as mocked:
+        mocked.get(url_tab, status=200, body=html, headers={"Content-Type": "text/html; charset=utf-8"})
+        async with GKDBayernScraper(url) as scraper:
+            latest = await scraper.fetch_latest()
+    assert latest.temperature_c == 20.0
+    assert latest.timestamp.hour == 21
+    assert latest.timestamp.minute == 45
+    assert latest.timestamp.tzinfo is not None
 
 
