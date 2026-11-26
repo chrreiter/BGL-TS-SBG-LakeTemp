@@ -38,7 +38,7 @@ dev/                        # ha_config_for_dev.yaml for a live HA dev instance
    - **Per-lake** (`gkd_bayern`): a `DataSourceInterface` (from `create_data_source`) + its own `DataUpdateCoordinator`. Uses one **shared** `aiohttp.ClientSession` across all per-lake sensors and a per-domain `DomainRateLimiter` (≤2 concurrent, ≥250 ms between starts).
    - **Shared dataset** (`hydro_ooe`, `salzburg_ogd`): lakes register with a `BaseDatasetCoordinator` subclass that downloads the whole dataset **once per refresh** and maps results to each lake. Refresh cadence = the minimum `scan_interval` among registered lakes.
 3. Coordinators produce `TemperatureReading(timestamp, temperature_c, source)`; the sensor exposes it as native value + `extra_state_attributes`.
-4. **Staleness rule:** if the latest reading is older than `timeout_hours`, `native_value` returns `None` (state `unknown`). `timeout_hours == MAX_TIMEOUT_HOURS` (336) disables the check.
+4. **Staleness rule:** if the latest reading is older than `timeout_hours`, `native_value` returns `None` (state `unknown`) — for **all** source types, via the single `LakeTemperatureSensor._is_stale` helper. `timeout_hours == MAX_TIMEOUT_HOURS` (336) disables the check. `available` reflects fetch failures only (failed update, or lake missing from a shared dataset), never staleness.
 
 ### Key invariants — don't break these
 - **Never show stale data as fresh.** Preserve the `timeout_hours` staleness logic in `sensor.py`.
@@ -53,7 +53,7 @@ dev/                        # ha_config_for_dev.yaml for a live HA dev instance
 Home Assistant is **stubbed** in `tests/conftest.py`, so the suite runs **without installing Home Assistant**. Offline tests mock HTTP with `aioresponses`; online tests do real HTTP and are opt-in.
 
 ```bash
-python -m pytest -q                 # offline suite (currently 132 passed, 4 skipped)
+python -m pytest -q                 # offline suite (currently 137 passed, 4 skipped)
 RUN_ONLINE=1 python -m pytest -q -m online   # opt-in real-HTTP tests
 ```
 
