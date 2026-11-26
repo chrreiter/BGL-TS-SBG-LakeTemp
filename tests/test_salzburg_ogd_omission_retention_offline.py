@@ -8,8 +8,8 @@ Expect:
   2) Next payload omits two lakes -> no warnings; those two retain last values
      while others update
   3) One omitted lake reappears before timeout -> no warnings; updates to new value
-  4) The other omitted lake exceeds timeout_hours -> becomes unavailable; a transition
-     WARNING is logged from the base dataset availability tracker
+  4) The other omitted lake exceeds timeout_hours -> state becomes unknown
+     (native_value None) while the entity stays available; a stale DEBUG log is emitted
 """
 
 import logging
@@ -166,8 +166,9 @@ async def test_salzburg_ogd_omission_retention_and_timeout(caplog) -> None:  # t
         mocked.get(OGD_URL, status=200, body=payload_step4, headers={"Content-Type": "text/plain; charset=utf-8"})
         await s_a.coordinator.async_refresh()
 
-    # After timeout exceeded for C: becomes unavailable
-    assert s_c.available is False
+    # After timeout exceeded for C: state unknown (value None), entity still available
+    assert s_c.available is True
+    assert s_c.native_value is None
 
     # A debug log from the sensor indicates stale reading
     # Access native_value to trigger the staleness check/log in the sensor property

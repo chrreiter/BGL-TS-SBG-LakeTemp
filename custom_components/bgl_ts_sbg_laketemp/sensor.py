@@ -260,76 +260,67 @@ class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
         )
         return sensor
 
-    @property
-    def available(self) -> bool:
-        # Aggregated dataset: available only if coordinator succeeded AND this lake has a non-stale reading
+    def _current_reading(self) -> TemperatureReading | None:
+        """Return this lake's latest reading from the coordinator, if any."""
         data = self.coordinator.data
         if isinstance(data, dict) and self._aggregated_lookup_key:
-            if not self.coordinator.last_update_success:
-                return False
-            reading: TemperatureReading | None = (data or {}).get(self._aggregated_lookup_key)
-            if reading is None:
-                return False
-            try:
-                configured_timeout_hours = self._lake.timeout_hours or DEFAULT_TIMEOUT_HOURS
-                if configured_timeout_hours >= MAX_TIMEOUT_HOURS:
-                    return True
-                now = datetime.now(timezone.utc)
-                max_age = timedelta(hours=configured_timeout_hours)
-                rec_ts = reading.timestamp.replace(tzinfo=timezone.utc) if reading.timestamp.tzinfo is None else reading.timestamp.astimezone(timezone.utc)
-                age = now - rec_ts
-                return age <= max_age
-            except Exception:
-                return False
-        # Per-lake: rely on coordinator success
-        return self.coordinator.last_update_success
+            return data.get(self._aggregated_lookup_key)
+        return data
+
+    def _is_stale(self, reading: TemperatureReading) -> bool:
+        """Return ``True`` if ``reading`` is older than the configured ``timeout_hours``.
+
+        ``timeout_hours == MAX_TIMEOUT_HOURS`` disables the check. Naive timestamps
+        are treated as UTC. Any error while comparing counts as stale so that a
+        reading of unknown age is never shown as fresh.
+        """
+        configured_timeout_hours = self._lake.timeout_hours or DEFAULT_TIMEOUT_HOURS
+        if configured_timeout_hours >= MAX_TIMEOUT_HOURS:
+            return False
+        try:
+            max_age = timedelta(hours=configured_timeout_hours)
+            ts = reading.timestamp
+            rec_ts = ts.replace(tzinfo=timezone.utc) if ts.tzinfo is None else ts.astimezone(timezone.utc)
+            age = datetime.now(timezone.utc) - rec_ts
+        except Exception:  # noqa: BLE001 - be resilient; never show data of unknown age
+            return True
+        if age > max_age:
+            _LOGGER.debug(
+                "Lake '%s': latest reading is stale (age=%ss > threshold=%ss)",
+                self._lake.name,
+                int(age.total_seconds()),
+                int(max_age.total_seconds()),
+            )
+            return True
+        return False
+
+    @property
+    def available(self) -> bool:
+        """Return whether the data source could be read for this lake.
+
+        Reflects fetch failures only: the coordinator's last update must have
+        succeeded and, for shared datasets, this lake must be present in the
+        dataset. Stale readings are handled by :attr:`native_value` (state
+        ``unknown``), consistently for all source types.
+        """
+        if not self.coordinator.last_update_success:
+            return False
+        if self._aggregated_lookup_key:
+            data = self.coordinator.data
+            return isinstance(data, dict) and data.get(self._aggregated_lookup_key) is not None
+        return True
 
     @property
     def native_value(self) -> float | None:
-        data = self.coordinator.data
-        reading: TemperatureReading | None
-        if isinstance(data, dict) and self._aggregated_lookup_key:
-            reading = data.get(self._aggregated_lookup_key)
-        else:
-            reading = data
-        if reading is None:
+        """Return the latest temperature, or ``None`` (``unknown``) if missing or stale."""
+        reading = self._current_reading()
+        if reading is None or self._is_stale(reading):
             return None
-
-        # If the reading is older than the configured timeout threshold, surface unknown
-        try:
-            now = datetime.now(timezone.utc)
-            # Treat the configured maximum timeout as "no staleness check" to keep tests stable
-            configured_timeout_hours = self._lake.timeout_hours or DEFAULT_TIMEOUT_HOURS
-            if configured_timeout_hours >= MAX_TIMEOUT_HOURS:
-                return float(reading.temperature_c)
-            max_age = timedelta(hours=configured_timeout_hours)
-            if reading.timestamp.tzinfo is None:
-                # normalize naive timestamps to UTC for comparison safety
-                rec_ts = reading.timestamp.replace(tzinfo=timezone.utc)
-            else:
-                rec_ts = reading.timestamp.astimezone(timezone.utc)
-            age = now - rec_ts
-            if age > max_age:
-                _LOGGER.debug(
-                    "Lake '%s': latest reading is stale (age=%ss > threshold=%ss)",
-                    self._lake.name,
-                    int(age.total_seconds()),
-                    int(max_age.total_seconds()),
-                )
-                return None
-        except Exception:  # noqa: BLE001 - be resilient; do not break state
-            return None
-
         return float(reading.temperature_c)
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        data = self.coordinator.data
-        reading: TemperatureReading | None
-        if isinstance(data, dict) and self._aggregated_lookup_key:
-            reading = data.get(self._aggregated_lookup_key)
-        else:
-            reading = data
+        reading = self._current_reading()
         attrs: Dict[str, Any] = {
             "lake_name": self._lake.name,
             "source_type": getattr(reading, "source", None) if reading else None,
