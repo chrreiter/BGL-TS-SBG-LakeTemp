@@ -33,7 +33,7 @@ import aiohttp
 from aiohttp import ClientConnectorError, ClientResponseError
 
 from ..mixins import AsyncSessionMixin
-from ..logging_utils import kv, log_operation
+from ..logging_utils import log_operation
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -548,7 +548,6 @@ class SalzburgOGDScraper(AsyncSessionMixin):
             return None
         date_formats = ["%d.%m.%Y", "%Y-%m-%d", "%d.%m.%y"]
         time_formats = ["%H:%M:%S", "%H:%M"]
-        last_exc: Exception | None = None
         for df in date_formats:
             try:
                 base = datetime.strptime(d, df)
@@ -558,13 +557,11 @@ class SalzburgOGDScraper(AsyncSessionMixin):
                             parsed = datetime.strptime(tm, tf)
                             combined = base.replace(hour=parsed.hour, minute=parsed.minute, second=getattr(parsed, "second", 0))
                             return combined.replace(tzinfo=VIENNA_TZ)
-                        except Exception as exc:  # noqa: BLE001
-                            last_exc = exc
+                        except ValueError:
                             continue
                 # No time provided; assume 12:00 to maintain ordering without biasing early/late
                 return base.replace(hour=12, minute=0, second=0, tzinfo=VIENNA_TZ)
-            except Exception as exc:  # noqa: BLE001
-                last_exc = exc
+            except ValueError:
                 continue
         return None
 

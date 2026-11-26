@@ -25,11 +25,7 @@ from homeassistant.helpers.update_coordinator import (
 from .const import (
     CONF_LAKES,
     CONF_NAME,
-    CONF_URL,
-    CONF_ENTITY_ID,
-    CONF_SCAN_INTERVAL,
-    CONF_TIMEOUT_HOURS,
-    CONF_USER_AGENT,
+    CONF_SOURCE,
     DEFAULT_SCAN_INTERVAL_SECONDS,
     DEFAULT_TIMEOUT_HOURS,
     MAX_TIMEOUT_HOURS,
@@ -129,8 +125,9 @@ async def async_setup_platform(
 class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
     """Sensor representing the latest water temperature for a configured lake.
 
-    Each instance manages its own external ``aiohttp.ClientSession`` to ensure a
-    stable User-Agent and connection reuse across updates, per project rules.
+    Per-lake sensors (GKD Bayern) own a ``DataUpdateCoordinator`` and share one
+    integration-wide ``aiohttp.ClientSession``; shared-dataset sensors (Hydro OÖ,
+    Salzburg OGD) read their reading from a dataset coordinator's mapping.
     """
 
     _attr_device_class = SensorDeviceClass.TEMPERATURE
@@ -156,7 +153,7 @@ class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
             lake_config: Validated configuration for this lake.
             coordinator: Update coordinator (per-lake or dataset-level).
             data_source: Per-lake data source if applicable; ``None`` for aggregated datasets.
-            session: Owned HTTP session for per-lake sensors; ``None`` for aggregated datasets.
+            session: Shared HTTP session for per-lake sensors; ``None`` for aggregated datasets.
             dataset_manager: Dataset coordinator when using aggregated sources.
             aggregated_lookup_key: Key used to extract this lake's reading from the dataset mapping.
         """
@@ -376,12 +373,15 @@ class LakeTemperatureSensor(CoordinatorEntity, SensorEntity):
             pass
 
     async def async_added_to_hass(self) -> None:
-        """Perform an initial refresh after the entity is added to Home Assistant."""
+        """Perform the initial dataset refresh after the entity is added to Home Assistant.
+
+        Per-lake coordinators are already refreshed once in ``async_setup_platform``,
+        so only shared-dataset coordinators that have no data yet are refreshed here
+        (the first sensor of a dataset triggers it; later ones reuse the result).
+        """
         await super().async_added_to_hass()
-        # Perform an immediate initial refresh so state is available promptly
         try:
-            # For aggregated datasets, avoid duplicate refresh if data already present
-            if not (isinstance(self.coordinator.data, dict) and self._aggregated_lookup_key):
+            if self._dataset_manager is not None and self.coordinator.data is None:
                 await self.coordinator.async_refresh()
         except Exception:  # noqa: BLE001 - best-effort; errors will reflect in availability
             return

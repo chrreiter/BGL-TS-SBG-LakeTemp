@@ -35,16 +35,13 @@ import random
 from urllib.parse import urlparse
 import abc
 import logging
-from typing import Callable, Dict, Iterable, Mapping, MutableMapping, Tuple
+from typing import Callable, Dict, MutableMapping, Tuple
 
 import aiohttp
 from aiohttp import TooManyRedirects
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import (
-    DataUpdateCoordinator,
-    UpdateFailed,
-)
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     DOMAIN,
@@ -58,6 +55,7 @@ from .const import (
 from .data_source import TemperatureReading
 from .scrapers.salzburg_ogd import SalzburgOGDScraper
 from .scrapers.hydro_ooe import (
+    decode_zrxp_bytes,
     split_zrxp_blocks,
     select_block,
     parse_zrxp_block,
@@ -831,7 +829,7 @@ class HydroOoeDatasetCoordinator(BaseDatasetCoordinator):
                 resp.raise_for_status()
                 raw = await resp.read()
                 bytes_downloaded = len(raw)
-                text = raw.decode(resp.charset or "utf-8", errors="replace")
+                text = decode_zrxp_bytes(raw, resp.charset)
             # Success: clear backoff and recompute schedule
             self._backoff_attempts = 0
             self._backoff_override_seconds = None
@@ -866,7 +864,8 @@ class HydroOoeDatasetCoordinator(BaseDatasetCoordinator):
                 records = parse_zrxp_block(block)
                 if not records:
                     continue
-                latest = records[-1]
+                # Blocks are not guaranteed to be chronological; pick the newest point
+                latest = max(records, key=lambda r: r.timestamp)
             except Exception:  # noqa: BLE001
                 _LOGGER.error("HydroOOE parse failed for lake=%s (sanr=%s)", cfg.name, sanr or "-")
                 continue
