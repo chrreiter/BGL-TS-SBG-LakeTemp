@@ -60,8 +60,6 @@ from .dataset_coordinators import (  # noqa: E402
     BaseDatasetCoordinator,
     get_dataset_manager,
     get_or_create_dataset_manager,
-    get_or_create_salzburg_coordinator,
-    get_or_create_hydro_ooe_coordinator,
     SalzburgOGDDatasetCoordinator,
     HydroOoeDatasetCoordinator,
 )
@@ -73,8 +71,6 @@ __all__ = [
     "BaseDatasetCoordinator",
     "get_dataset_manager",
     "get_or_create_dataset_manager",
-    "get_or_create_salzburg_coordinator",
-    "get_or_create_hydro_ooe_coordinator",
     "SalzburgOGDDatasetCoordinator",
     "HydroOoeDatasetCoordinator",
 ]

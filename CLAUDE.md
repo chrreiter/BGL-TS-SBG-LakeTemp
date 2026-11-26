@@ -18,7 +18,7 @@ custom_components/bgl_ts_sbg_laketemp/
 ├── __init__.py             # async_setup; forwards YAML lakes to sensor platform via discovery
 ├── const.py                # DOMAIN, voluptuous schema, LakeConfig/SourceConfig dataclasses, validation
 ├── sensor.py               # LakeTemperatureSensor (CoordinatorEntity) + async_setup_platform
-├── data_source.py          # DataSourceInterface + TemperatureReading + create_data_source (per-lake sources)
+├── data_source.py          # DataSourceInterface + TemperatureReading + create_data_source (per-lake sources only)
 ├── dataset_coordinators.py # Shared-dataset coordinators, DomainRateLimiter, shared session helpers
 ├── mixins.py               # AsyncSessionMixin (aiohttp session lifecycle)
 ├── logging_utils.py        # kv() + log_operation() structured logging helpers
@@ -53,7 +53,7 @@ dev/                        # ha_config_for_dev.yaml for a live HA dev instance
 Home Assistant is **stubbed** in `tests/conftest.py`, so the suite runs **without installing Home Assistant**. Offline tests mock HTTP with `aioresponses`; online tests do real HTTP and are opt-in.
 
 ```bash
-python -m pytest -q                 # offline suite (currently 132 passed, 4 skipped)
+python -m pytest -q                 # offline suite (currently 118 passed, 4 skipped)
 RUN_ONLINE=1 python -m pytest -q -m online   # opt-in real-HTTP tests
 ```
 
