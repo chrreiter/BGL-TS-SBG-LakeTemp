@@ -227,7 +227,7 @@ class GKDBayernScraper(AsyncSessionMixin):
                 operation="http_get",
                 url=url,
             ) as op:
-                async with session.get(url) as resp:
+                async with session.get(url, headers=self._request_headers) as resp:
                     # Raise for non-2xx
                     try:
                         resp.raise_for_status()

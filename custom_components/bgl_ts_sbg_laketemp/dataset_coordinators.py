@@ -19,14 +19,14 @@ mapping for the dataset.
 
 User-Agent behavior
 -------------------
-- Shared dataset coordinators (e.g., Salzburg OGD, Hydro OOE) create a single
-  shared ``aiohttp.ClientSession`` for all registered lakes in that dataset.
-  The session's ``User-Agent`` is taken from the first-registered lake's
-  ``user_agent`` value, or :data:`DEFAULT_USER_AGENT` if not provided. Later
-  registrations do not change the UA for the existing shared session.
-- Potential future extension: If needed, the dataset store can be partitioned
-  by both dataset id and user-agent (e.g., keys of ``(dataset_id, user_agent)``)
-  to maintain separate shared sessions per UA.
+- Per-lake sources (GKD Bayern) share one integration-wide session
+  (:func:`get_shared_client_session`), but each scraper sends its own lake's
+  ``user_agent`` per request, so the per-lake option is honoured.
+- Shared dataset coordinators (e.g., Salzburg OGD, Hydro OOE) fetch the whole
+  dataset with a single request for all registered lakes, so only one
+  ``User-Agent`` can be sent: the first-registered lake's ``user_agent`` (or
+  :data:`DEFAULT_USER_AGENT`). A later lake with a different ``user_agent`` is
+  logged as a warning (see :func:`_warn_if_user_agent_ignored`).
 """
 
 from datetime import datetime, timedelta, timezone
@@ -53,6 +53,7 @@ from .const import (
     HydroOOEOptions,
 )
 from .data_source import TemperatureReading
+from .logging_utils import kv
 from .scrapers.salzburg_ogd import SalzburgOGDScraper
 from .scrapers.hydro_ooe import (
     decode_zrxp_bytes,
@@ -236,8 +237,9 @@ def get_shared_client_session(
 ) -> aiohttp.ClientSession:
     """Return a single shared ClientSession for the integration.
 
-    The first caller defines the User-Agent header; subsequent callers reuse the
-    session regardless of User-Agent to maximize connection reuse.
+    The first caller defines the session's default User-Agent header; subsequent
+    callers reuse the session to maximize connection reuse. Scrapers send their
+    own lake's User-Agent per request, so a per-lake ``user_agent`` still applies.
     """
     store = _get_dataset_store(hass)
     existing = store.get("_shared_session")
@@ -316,6 +318,27 @@ def get_or_create_dataset_manager(
         store[dataset_id] = manager
         _LOGGER.info("Created dataset coordinator for dataset_id=%s", dataset_id)
     return manager
+
+
+def _warn_if_user_agent_ignored(dataset_id: str, session_user_agent: str | None, lake_config: LakeConfig) -> None:
+    """Warn when a lake's ``user_agent`` differs from the shared dataset request's.
+
+    Shared datasets download one file for all registered lakes, so only the
+    first-registered lake's ``user_agent`` can be sent.
+    """
+    lake_user_agent = lake_config.user_agent or DEFAULT_USER_AGENT
+    if session_user_agent is None or lake_user_agent == session_user_agent:
+        return
+    _LOGGER.warning(
+        "Shared dataset sends one User-Agent for all lakes; ignoring this lake's user_agent: %s",
+        kv(
+            dataset_id=dataset_id,
+            lake=lake_config.name,
+            entity_id=lake_config.entity_id,
+            configured_user_agent=lake_user_agent,
+            used_user_agent=session_user_agent,
+        ),
+    )
 
 
 class BaseDatasetCoordinator(abc.ABC):
@@ -562,6 +585,8 @@ class SalzburgOGDDatasetCoordinator(BaseDatasetCoordinator):
             timeout = aiohttp.ClientTimeout(total=20)
             headers = {"User-Agent": self._ua}
             self._session = aiohttp.ClientSession(headers=headers, timeout=timeout)
+        elif lake_config.entity_id not in self._members_by_entity_id:
+            _warn_if_user_agent_ignored(self.dataset_id, self._ua, lake_config)
 
         self._raw_target_names_by_entity_id[lake_config.entity_id] = raw_name
 
@@ -745,6 +770,8 @@ class HydroOoeDatasetCoordinator(BaseDatasetCoordinator):
             timeout = aiohttp.ClientTimeout(total=20)
             headers = {"User-Agent": self._ua}
             self._session = aiohttp.ClientSession(headers=headers, timeout=timeout)
+        elif lake_config.entity_id not in self._members_by_entity_id:
+            _warn_if_user_agent_ignored(self.dataset_id, self._ua, lake_config)
 
         self._sanr_by_entity_id[lake_config.entity_id] = sanr_val
         self._name_hint_by_entity_id[lake_config.entity_id] = name_hint

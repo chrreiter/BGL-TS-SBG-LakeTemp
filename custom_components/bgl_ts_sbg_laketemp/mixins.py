@@ -21,9 +21,13 @@ Usage:
 
         async def fetch(self) -> str:
             session = await self._ensure_session()
-            async with session.get("https://example.com") as resp:
+            async with session.get("https://example.com", headers=self._request_headers) as resp:
                 resp.raise_for_status()
                 return await resp.text()
+
+Pass :attr:`AsyncSessionMixin._request_headers` on each request so this
+instance's User-Agent is sent even when an external session (whose default
+headers were set by someone else) is shared between instances.
 
 The mixin never closes an external session. It only closes an internally
 created session on :meth:`close` or when exiting the async context manager.
@@ -72,6 +76,16 @@ class AsyncSessionMixin:
         if extra_headers is not None:
             composed_headers.update(dict(extra_headers))
         self._session_headers: Mapping[str, str] = composed_headers
+
+    @property
+    def _request_headers(self) -> Mapping[str, str]:
+        """Per-request headers carrying this instance's User-Agent.
+
+        A shared external session keeps the default headers of whoever created
+        it; sending the User-Agent per request makes each instance's configured
+        value take effect regardless (request headers override session defaults).
+        """
+        return {"User-Agent": self._session_headers.get("User-Agent", self._user_agent)}
 
     async def __aenter__(self):  # noqa: ANN001 - typing varies by subclass
         await self._ensure_session()
