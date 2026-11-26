@@ -38,7 +38,7 @@ dev/                        # ha_config_for_dev.yaml for a live HA dev instance
    - **Per-lake** (`gkd_bayern`): a `DataSourceInterface` (from `create_data_source`) + its own `DataUpdateCoordinator`. Uses one **shared** `aiohttp.ClientSession` across all per-lake sensors and a per-domain `DomainRateLimiter` (≤2 concurrent, ≥250 ms between starts).
    - **Shared dataset** (`hydro_ooe`, `salzburg_ogd`): lakes register with a `BaseDatasetCoordinator` subclass that downloads the whole dataset **once per refresh** and maps results to each lake. Refresh cadence = the minimum `scan_interval` among registered lakes.
 3. Coordinators produce `TemperatureReading(timestamp, temperature_c, source)`; the sensor exposes it as native value + `extra_state_attributes`.
-4. **Staleness rule:** if the latest reading is older than `timeout_hours`, `native_value` returns `None` (state `unknown`). `timeout_hours == MAX_TIMEOUT_HOURS` (336) disables the check.
+4. **Staleness rule:** if the latest reading is older than `timeout_hours`, `native_value` returns `None` (state `unknown`) — for **all** source types, via the single `LakeTemperatureSensor._is_stale` helper. `timeout_hours == MAX_TIMEOUT_HOURS` (336) disables the check. `available` reflects fetch failures only (failed update, or lake missing from a shared dataset), never staleness.
 
 ### Key invariants — don't break these
 - **Never show stale data as fresh.** Preserve the `timeout_hours` staleness logic in `sensor.py`.
@@ -53,13 +53,14 @@ dev/                        # ha_config_for_dev.yaml for a live HA dev instance
 Home Assistant is **stubbed** in `tests/conftest.py`, so the suite runs **without installing Home Assistant**. Offline tests mock HTTP with `aioresponses`; online tests do real HTTP and are opt-in.
 
 ```bash
-python -m pytest -q                 # offline suite (currently 118 passed, 4 skipped)
+python -m pytest -q                 # offline suite (currently 123 passed, 4 skipped)
 RUN_ONLINE=1 python -m pytest -q -m online   # opt-in real-HTTP tests
 ```
 
 - Test env deps are pinned in **`requirements-dev.txt`** — install with `pip install -r requirements-dev.txt`.
 - Offline test files end in `*_offline.py`; online ones in `*_online.py` (skipped unless `RUN_ONLINE=1`).
 - `pytest.ini` disables sockets (`-p no:socket`) and the HA custom-component plugin.
+- An autouse fixture in `conftest.py` closes every `aiohttp.ClientSession` created during a test (the stub `hass` has no stop event, so the integration's shutdown hooks never fire). Check for leaks with `python -X dev -m pytest -q -W error::ResourceWarning` — it should report no `Unclosed client session` warnings.
 
 ### ⚠️ Dependency gotcha (important)
 `aioresponses` (0.7.9, the latest) is **incompatible with aiohttp ≥ 3.12** out of the box — it builds `ClientResponse` without the now-mandatory `stream_writer` argument (`TypeError: ClientResponse.__init__() missing ... 'stream_writer'`). This is a **test-tooling** issue, not a bug in this repo.

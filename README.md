@@ -74,7 +74,8 @@ The integration creates one sensor per configured lake. Shared datasets (Hydro O
 
 Notes
 - If an optional field is omitted, its default applies
-- If the latest reading is older than `timeout_hours`, the sensor state is set to `unknown`
+- If the latest reading is older than `timeout_hours`, the sensor state is set to `unknown` (the same for every source type; `timeout_hours: 336` disables the check)
+- The sensor becomes `unavailable` only when the data can't be fetched: the last update failed, or a shared dataset (`hydro_ooe`, `salzburg_ogd`) has no entry for this lake
 
 
 ### Software architecture (high level)
