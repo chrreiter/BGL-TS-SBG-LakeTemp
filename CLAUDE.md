@@ -75,7 +75,7 @@ See the step-by-step in `README.md` ("Adding a new data source"). In short: add 
 - When behavior changes, update the matching offline test and `README.md`.
 
 ## Git workflow
-- Dependabot (`.github/dependabot.yml`) opens weekly PRs for `requirements-dev.txt` (pip) and GitHub Actions. Merge them once the `Tests` workflow is green.
+- Dependabot (`.github/dependabot.yml`) opens monthly PRs for `requirements-dev.txt` (pip) and GitHub Actions. Merge them once the `Tests` workflow is green.
 - Default branch is `main`. Do development on a short-lived feature branch per change (e.g. `fix/...`, `chore/...`, `test/...`), one logical change per branch/PR.
 - Commit with clear messages; push with `git push -u origin <branch>`. Do not open a PR unless explicitly asked.
 - **Use Conventional Commits** (`feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `chore:`, `test:`, `ci:`; `!` or a `BREAKING CHANGE:` footer for breaking changes). For squash merges the **PR title** becomes the commit, so it must follow the format too.
