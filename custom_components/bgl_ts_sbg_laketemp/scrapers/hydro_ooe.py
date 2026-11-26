@@ -26,7 +26,7 @@ from aiohttp import ClientConnectorError, ClientResponseError
 import re
 
 from ..mixins import AsyncSessionMixin
-from ..logging_utils import kv, log_operation
+from ..logging_utils import log_operation
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,6 +58,30 @@ class HydroOOERecord:
 
     timestamp: datetime
     temperature_c: float
+
+
+def decode_zrxp_bytes(raw: bytes, charset: str | None = None) -> str:
+    """Decode a ZRXP download, tolerating the export's non-UTF-8 encodings.
+
+    Tries the server-declared charset first, then UTF-8 and cp1252, and finally
+    falls back to latin-1 (which never fails). Station names such as
+    "Hallstätter See" must survive decoding for name-based selection to match.
+
+    Args:
+        raw: Response body bytes.
+        charset: Charset declared by the server, if any.
+
+    Returns:
+        str: Decoded text.
+    """
+    encodings = [charset] if charset else []
+    encodings.extend(["utf-8", "cp1252"])
+    for enc in encodings:
+        try:
+            return raw.decode(enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return raw.decode("latin-1")
 
 
 def split_zrxp_blocks(text: str) -> list[str]:
@@ -371,41 +395,22 @@ class HydroOOEScraper(AsyncSessionMixin):
                         resp.raise_for_status()
                     except ClientResponseError as exc:
                         raise HttpError(f"HTTP error {exc.status} for {url}") from exc
-                    # Robust decoding: try server-declared/UTF-8 first, then latin-1 and cp1252 as fallbacks
                     raw = await resp.read()
                     op.set(status=resp.status, bytes=len(raw))
-                    encodings = []
-                    if resp.charset:
-                        encodings.append(resp.charset)
-                    encodings.extend(["utf-8", "latin-1", "cp1252"])
-                    last_error: Exception | None = None
-                    for enc in encodings:
-                        try:
-                            return raw.decode(enc)
-                        except Exception as dec_err:  # noqa: BLE001
-                            last_error = dec_err
-                            continue
-                    # As a last resort, replace undecodable bytes
-                    try:
-                        return raw.decode("utf-8", errors="replace")
-                    except Exception as exc2:  # noqa: BLE001
-                        if last_error is not None:
-                            raise last_error
-                        raise exc2
+                    return decode_zrxp_bytes(raw, resp.charset)
         except ClientConnectorError as exc:
             raise NetworkError(f"Network error while connecting to {url}") from exc
         except aiohttp.ServerTimeoutError as exc:
             raise NetworkError(f"Timeout while fetching {url}") from exc
         except aiohttp.ClientError as exc:
             raise HttpError(f"Client error while fetching {url}: {exc}") from exc
-        except HttpError:
-            raise
 
     # Note: Legacy timestamp parsing helpers removed. ZRXP path handles parsing internally.
 
 __all__ = [
     "HydroOOEScraper",
     "HydroOOERecord",
+    "decode_zrxp_bytes",
     "split_zrxp_blocks",
     "select_block",
     "parse_zrxp_block",
