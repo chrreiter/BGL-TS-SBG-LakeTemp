@@ -12,16 +12,16 @@
 # provides aiohttp at runtime.
 
 # Test runner
-pytest==9.1.1
-pytest-asyncio==1.4.0
+pytest==9.2.0
+pytest-asyncio==1.5.0
 
 # HTTP mocking for offline tests
 aioresponses==0.7.9
 
 # Runtime libraries the scrapers import (mirrors manifest.json, pinned for repeatable test runs)
-aiohttp==3.14.3
-beautifulsoup4==4.12.3
+aiohttp==3.14.5
+beautifulsoup4==4.15.0
 voluptuous==0.16.0
 
 # Timezone data (needed for Europe/Berlin / Europe/Vienna ZoneInfo lookups on some platforms)
-tzdata>=2024.1
+tzdata>=2026.6
