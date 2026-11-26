@@ -10,11 +10,22 @@ import pytest
 from aioresponses import aioresponses
 
 from custom_components.bgl_ts_sbg_laketemp.const import LAKE_SCHEMA, build_lake_config
-from custom_components.bgl_ts_sbg_laketemp.data_source import create_data_source, TemperatureReading
-from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import NoDataError
+from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import HydroOOEScraper, NoDataError
 
 
 ZRXP_URL = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+
+
+async def _fetch_latest(lake_cfg):  # type: ignore[no-untyped-def]
+    """Fetch the latest reading for a Hydro OÖ lake config via ``HydroOOEScraper``.
+
+    Mirrors how the dataset coordinator selects a series: explicit
+    ``options.station_id`` (SANR) first, the lake name as hint otherwise.
+    """
+    options = lake_cfg.source.options
+    station_id = str(options.station_id) if getattr(options, "station_id", None) else None
+    async with HydroOOEScraper(station_id=station_id, name_hint=lake_cfg.name) as scraper:
+        return await scraper.fetch_latest()
 
 
 def _block(sanr: str, sname: str, swater: str, values: list[tuple[str, str]]) -> str:
@@ -41,10 +52,8 @@ async def test_sanr_overrides_mismatching_name() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=payload, headers={"Content-Type": "text/plain"})
-        src = create_data_source(lake)
-        reading = await src.fetch_temperature()
+        reading = await _fetch_latest(lake)
 
-    assert isinstance(reading, TemperatureReading)
     assert reading.temperature_c == 23.1
 
 
@@ -65,9 +74,8 @@ async def test_unknown_sanr_raises_nodata_with_message() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=payload, headers={"Content-Type": "text/plain"})
-        src = create_data_source(lake)
         with pytest.raises(NoDataError) as e:
-            await src.fetch_temperature()
+            await _fetch_latest(lake)
 
     # Error message should mention SANR and the value
     assert "SANR" in str(e.value) and "999999" in str(e.value)
@@ -89,10 +97,8 @@ async def test_unique_exact_name_match_succeeds() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=payload, headers={"Content-Type": "text/plain"})
-        src = create_data_source(lake)
-        reading = await src.fetch_temperature()
+        reading = await _fetch_latest(lake)
 
-    assert isinstance(reading, TemperatureReading)
     assert reading.temperature_c == 23.3
 
 
@@ -115,9 +121,8 @@ async def test_ambiguous_exact_name_raises() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=payload, headers={"Content-Type": "text/plain"})
-        src = create_data_source(lake)
         with pytest.raises(NoDataError) as e:
-            await src.fetch_temperature()
+            await _fetch_latest(lake)
 
     assert "Ambiguous" in str(e.value) or "ambiguous" in str(e.value)
 
@@ -138,8 +143,7 @@ async def test_fuzzy_name_does_not_match() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=payload, headers={"Content-Type": "text/plain"})
-        src = create_data_source(lake)
         with pytest.raises(NoDataError):
-            await src.fetch_temperature()
+            await _fetch_latest(lake)
 
 

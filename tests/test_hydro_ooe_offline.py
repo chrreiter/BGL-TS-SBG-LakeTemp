@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-# Tests for HydroOOE data source using the factory (ZRXP bulk parsing)
-# - Success: ZRXP bulk file returns latest TemperatureReading for station
+# Tests for HydroOOEScraper (ZRXP bulk parsing)
+# - Success: ZRXP bulk file returns the latest reading for the station
 # - Error paths: HTTP 404, timeout, malformed payload, no data -> appropriate errors
 
 import pytest
 from aioresponses import aioresponses
 
-from custom_components.bgl_ts_sbg_laketemp.data_source import create_data_source, TemperatureReading
 from custom_components.bgl_ts_sbg_laketemp.const import LAKE_SCHEMA, build_lake_config
 from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import (
     HttpError,
+    HydroOOEScraper,
     NetworkError,
     ParseError,
     NoDataError,
@@ -18,6 +18,18 @@ from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import (
 
 
 ZRXP_URL = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+
+
+async def _fetch_latest(lake_cfg):  # type: ignore[no-untyped-def]
+    """Fetch the latest reading for a Hydro OÖ lake config via ``HydroOOEScraper``.
+
+    Mirrors how the dataset coordinator selects a series: explicit
+    ``options.station_id`` (SANR) first, the lake name as hint otherwise.
+    """
+    options = lake_cfg.source.options
+    station_id = str(options.station_id) if getattr(options, "station_id", None) else None
+    async with HydroOOEScraper(station_id=station_id, name_hint=lake_cfg.name) as scraper:
+        return await scraper.fetch_latest()
 
 
 # Test: Successful ZRXP parsing when SANR is explicitly provided (5005 Irrsee)
@@ -43,14 +55,11 @@ async def test_hydro_ooe_success_latest_from_json_series() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=zrxp_text, headers={"Content-Type": "text/plain"})
-        source = create_data_source(lake_cfg)
-        reading = await source.fetch_temperature()
+        reading = await _fetch_latest(lake_cfg)
 
-    assert isinstance(reading, TemperatureReading)
     assert reading.temperature_c == 23.1
     assert reading.timestamp.hour == 16
     assert reading.timestamp.tzinfo is not None
-    assert reading.source == "hydro_ooe"
 
 
 # Test: Prefer water temperature when multiple parameter blocks exist for same SANR
@@ -80,10 +89,8 @@ async def test_hydro_ooe_prefers_water_temperature_block_for_same_sanr() -> None
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=zrxp_text, headers={"Content-Type": "text/plain"})
-        source = create_data_source(lake_cfg)
-        reading = await source.fetch_temperature()
+        reading = await _fetch_latest(lake_cfg)
 
-    assert isinstance(reading, TemperatureReading)
     assert reading.temperature_c == 25.0
 
 
@@ -91,8 +98,6 @@ async def test_hydro_ooe_prefers_water_temperature_block_for_same_sanr() -> None
 # Expect: Chooses WT block for exact SNAME match
 @pytest.mark.asyncio
 async def test_hydro_ooe_name_based_selection_prefers_wt() -> None:
-    from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import HydroOOEScraper
-
     zrxp_text = (
         "#SANR5005|*|SNAMEZell am Moos|*|SWATERZeller See (Irrsee)|*|CNRLT|*|CNAMELufttemperatur|*| "
         "#TZUTC+1|*|RINVAL-777|*| #CUNIT°C|*| #LAYOUT(timestamp,value)|*| "
@@ -121,9 +126,8 @@ async def test_hydro_ooe_http_404_raises() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=404)
-        source = create_data_source(lake_cfg)
         with pytest.raises(HttpError):
-            await source.fetch_temperature()
+            await _fetch_latest(lake_cfg)
 
 
 # Test: Timeout during ZRXP request (SANR specified)
@@ -139,9 +143,8 @@ async def test_hydro_ooe_timeout_raises_network() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, exception=aiohttp.ServerTimeoutError())
-        source = create_data_source(lake_cfg)
         with pytest.raises(NetworkError):
-            await source.fetch_temperature()
+            await _fetch_latest(lake_cfg)
 
 
 # Test: Malformed ZRXP payload structure (missing layout marker)
@@ -157,9 +160,8 @@ async def test_hydro_ooe_malformed_payload_raises_parse() -> None:
     with aioresponses() as mocked:
         bad_text = "#SANR16579|*|SNAMEIrrsee|*| #TZUTC+1|*| RINVAL-777|*|"
         mocked.get(ZRXP_URL, status=200, body=bad_text, headers={"Content-Type": "text/plain"})
-        source = create_data_source(lake_cfg)
         with pytest.raises(ParseError):
-            await source.fetch_temperature()
+            await _fetch_latest(lake_cfg)
 
 
 # Test: No data in series (no numeric pairs after layout)
@@ -176,6 +178,5 @@ async def test_hydro_ooe_no_data_in_series_raises_nodata() -> None:
             "#SANR16579|*|SNAMEIrrsee|*| #TZUTC+1|*| RINVAL-777|*| #LAYOUT(timestamp,value)|*| "
         )
         mocked.get(ZRXP_URL, status=200, body=empty_text, headers={"Content-Type": "text/plain"})
-        source = create_data_source(lake_cfg)
         with pytest.raises(NoDataError):
-            await source.fetch_temperature()
+            await _fetch_latest(lake_cfg)

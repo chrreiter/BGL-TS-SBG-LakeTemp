@@ -19,8 +19,6 @@ from custom_components.bgl_ts_sbg_laketemp.scrapers.salzburg_ogd import (
     ParseError,
     NoDataError,
 )
-from custom_components.bgl_ts_sbg_laketemp.const import LAKE_SCHEMA, build_lake_config
-from custom_components.bgl_ts_sbg_laketemp.data_source import create_data_source, TemperatureReading
 
 
 OGD_URL = "https://www.salzburg.gv.at/ogd/56c28e2d-8b9e-41ba-b7d6-fa4896b5b48b/Hydrografie%20Seen.txt"
@@ -100,18 +98,10 @@ async def test_salzburg_ogd_no_matching_lake() -> None:
                 await scraper.fetch_latest_for_lake("NonExistingLake")
 
 
-# Test: Source works without explicit URL in config (uses default OGD URL)
+# Test: Scraper works without an explicit URL (uses the default OGD URL)
 # Expect: Successful fetch when only the official OGD URL is mocked
 @pytest.mark.asyncio
 async def test_salzburg_ogd_without_explicit_url() -> None:
-    raw = {
-        "name": "Fuschlsee",
-        "entity_id": "fuschlsee_no_url",
-        "source": {"type": "salzburg_ogd", "options": {"lake_name": "Fuschlsee"}},
-    }
-    validated = LAKE_SCHEMA(raw)
-    lake_cfg = build_lake_config(validated)
-
     payload = (
         "Gewässer;Messdatum;Uhrzeit;Wassertemperatur [°C];Station\n"
         "Fuschlsee;2025-08-08;13:00;22,0;Westufer\n"
@@ -120,11 +110,8 @@ async def test_salzburg_ogd_without_explicit_url() -> None:
 
     with aioresponses() as mocked:
         mocked.get(OGD_URL, status=200, body=payload)
-        source = create_data_source(lake_cfg)
-        reading = await source.fetch_temperature()
+        async with SalzburgOGDScraper() as scraper:
+            latest = await scraper.fetch_latest_for_lake("Fuschlsee")
 
-    assert isinstance(reading, TemperatureReading)
-    assert reading.temperature_c == 22.4
-    assert reading.timestamp.hour == 14
-    assert reading.source == "salzburg_ogd"
-
+    assert latest.temperature_c == 22.4
+    assert latest.timestamp.hour == 14

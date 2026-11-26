@@ -12,10 +12,22 @@ import pytest
 from aioresponses import aioresponses
 
 from custom_components.bgl_ts_sbg_laketemp.const import LAKE_SCHEMA, build_lake_config
-from custom_components.bgl_ts_sbg_laketemp.data_source import TemperatureReading, create_data_source
+from custom_components.bgl_ts_sbg_laketemp.scrapers.hydro_ooe import HydroOOEScraper
 
 
 ZRXP_URL = "https://data.ooe.gv.at/files/hydro/HDOOE_Export_WT.zrxp"
+
+
+async def _fetch_latest(lake_cfg):  # type: ignore[no-untyped-def]
+    """Fetch the latest reading for a Hydro OÖ lake config via ``HydroOOEScraper``.
+
+    Mirrors how the dataset coordinator selects a series: explicit
+    ``options.station_id`` (SANR) first, the lake name as hint otherwise.
+    """
+    options = lake_cfg.source.options
+    station_id = str(options.station_id) if getattr(options, "station_id", None) else None
+    async with HydroOOEScraper(station_id=station_id, name_hint=lake_cfg.name) as scraper:
+        return await scraper.fetch_latest()
 
 
 @pytest.mark.asyncio
@@ -40,13 +52,10 @@ async def test_hydro_ooe_name_hint_selects_and_returns_latest() -> None:
 
     with aioresponses() as mocked:
         mocked.get(ZRXP_URL, status=200, body=zrxp_text, headers={"Content-Type": "text/plain"})
-        source = create_data_source(lake_cfg)
-        reading = await source.fetch_temperature()
+        reading = await _fetch_latest(lake_cfg)
 
-    assert isinstance(reading, TemperatureReading)
     assert reading.temperature_c == 23.3
     assert reading.timestamp.tzinfo is not None
     assert reading.timestamp.hour == 16  # latest sample hour
-    assert reading.source == "hydro_ooe"
 
 
