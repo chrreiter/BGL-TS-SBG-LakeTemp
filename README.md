@@ -180,6 +180,12 @@ Notes for online runs
 - WARNING: a registered lake missing in the latest dataset snapshot
 - ERROR: HTTP/download/parse failures
 
+### Releases
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please) and driven by [Conventional Commits](https://www.conventionalcommits.org/) on `main` (`feat:` → minor bump while < 1.0.0, `fix:` → patch bump; `docs:`/`refactor:`/`perf:` also appear in the changelog). With squash merges, the PR title is the commit message, so it must follow the same format.
+
+On each push to `main`, the `Release Please` workflow opens or updates a release PR. Merging it bumps `version` in `manifest.json`, updates `CHANGELOG.md`, tags `vX.Y.Z` and publishes the GitHub Release that HACS installs from.
+
 ### Roadmap
 
 - Support flexible scheduling (fixed interval or specific times) aligned with HA scheduling
