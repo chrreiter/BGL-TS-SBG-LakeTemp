@@ -217,3 +217,32 @@ def _cleanup_shared_aiohttp_session():  # type: ignore[no-untyped-def]
         _asyncio.run(_close_shared_session_on_stop({}))
     except Exception:
         pass
+
+
+# ---- aioresponses <-> aiohttp >= 3.12 compatibility shim (test-only) ----
+# aioresponses 0.7.9 (latest) builds ClientResponse objects without the
+# ``stream_writer`` keyword that aiohttp 3.12+ made mandatory, which raises
+# "ClientResponse.__init__() missing ... 'stream_writer'" on every mocked call.
+# Supply a minimal stand-in so the offline suite works on current aiohttp.
+def _patch_aioresponses_for_new_aiohttp() -> None:
+    try:
+        import aioresponses.core as _aior_core
+        from aiohttp import ClientResponse
+    except ImportError:  # pragma: no cover - aioresponses not installed
+        return
+
+    if "stream_writer" not in inspect.signature(ClientResponse.__init__).parameters:
+        return  # aiohttp < 3.12: nothing to do
+
+    class _NoopStreamWriter:
+        output_size = 0
+
+    class _CompatClientResponse(ClientResponse):
+        def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+            kwargs.setdefault("stream_writer", _NoopStreamWriter())
+            super().__init__(*args, **kwargs)
+
+    _aior_core.ClientResponse = _CompatClientResponse
+
+
+_patch_aioresponses_for_new_aiohttp()

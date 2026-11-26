@@ -62,8 +62,8 @@ RUN_ONLINE=1 python -m pytest -q -m online   # opt-in real-HTTP tests
 - `pytest.ini` disables sockets (`-p no:socket`) and the HA custom-component plugin.
 
 ### ⚠️ Dependency gotcha (important)
-`aioresponses` (0.7.9, the latest) is **incompatible with aiohttp ≥ 3.12** — you'll see `TypeError: ClientResponse.__init__() missing ... 'stream_writer'` and the whole offline suite fails. This is a **test-tooling** issue, not a bug in this repo.
-- Fix: use the pinned `aiohttp==3.11.18` from `requirements-dev.txt` (latest patch in the aioresponses-compatible 3.11.x line).
+`aioresponses` (0.7.9, the latest) is **incompatible with aiohttp ≥ 3.12** out of the box — it builds `ClientResponse` without the now-mandatory `stream_writer` argument (`TypeError: ClientResponse.__init__() missing ... 'stream_writer'`). This is a **test-tooling** issue, not a bug in this repo.
+- Fix: `tests/conftest.py` has a small compatibility shim (`_patch_aioresponses_for_new_aiohttp`) that supplies a no-op `stream_writer` when the installed aiohttp needs one. Keep it until aioresponses ships a fixed release; with it, the `aiohttp` pin in `requirements-dev.txt` can follow Dependabot bumps.
 - Do **not** "fix" it by loosening the runtime pin in `manifest.json` — HA ships its own aiohttp at runtime; `aiohttp>=3.9.1` there is correct. The constraint is a test-only concern.
 
 ## Adding a new data source
@@ -75,6 +75,7 @@ See the step-by-step in `README.md` ("Adding a new data source"). In short: add 
 - When behavior changes, update the matching offline test and `README.md`.
 
 ## Git workflow
+- Dependabot (`.github/dependabot.yml`) opens weekly PRs for `requirements-dev.txt` (pip) and GitHub Actions. Merge them once the `Tests` workflow is green.
 - Default branch is `main`. Do development on a short-lived feature branch per change (e.g. `fix/...`, `chore/...`, `test/...`), one logical change per branch/PR.
 - Commit with clear messages; push with `git push -u origin <branch>`. Do not open a PR unless explicitly asked.
 - Releases are tagged `vMAJOR.MINOR.PATCH` from `main` after the matching `manifest.json` version bump; HACS consumes the GitHub Release (`hacs.json` has `zip_release: false`).
