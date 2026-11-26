@@ -190,9 +190,19 @@ def _run_coroutine(func, kwargs):  # type: ignore[no-untyped-def]
     """Execute a coroutine function with its kwargs using a fresh event loop.
 
     Using asyncio.run avoids deprecated get_event_loop semantics on Python 3.11+
-    and ensures no reliance on a pre-existing global event loop.
+    and ensures no reliance on a pre-existing global event loop. Integration
+    sessions are closed in the same loop right after the test (see
+    ``_close_integration_sessions``), so their connectors are torn down on the
+    loop that created them.
     """
-    return asyncio.run(func(**kwargs))
+
+    async def _run_and_cleanup():  # type: ignore[no-untyped-def]
+        try:
+            return await func(**kwargs)
+        finally:
+            await _close_integration_sessions()
+
+    return asyncio.run(_run_and_cleanup())
 
 
 def pytest_pyfunc_call(pyfuncitem):  # type: ignore[no-untyped-def]
@@ -210,17 +220,62 @@ def pytest_pyfunc_call(pyfuncitem):  # type: ignore[no-untyped-def]
     return None
 
 
-# Ensure any shared aiohttp session created by the integration is closed after each test
-@pytest.fixture(autouse=True)
-def _cleanup_shared_aiohttp_session():  # type: ignore[no-untyped-def]
-    yield
+# ---- Close aiohttp sessions created during a test ----
+# Tests pass plain dicts as ``hass`` (no stop event), so the integration's
+# ``homeassistant_stop`` hooks never fire and the shared session / dataset
+# coordinator sessions would leak ("Unclosed client session"). Record every
+# ``aiohttp.ClientSession`` created during a test and close whatever is still
+# open afterwards (closing an already-closed session is a no-op).
+# Strong references on purpose: code that drops its session reference (e.g. a
+# coordinator's last unregister without a loop) must not let the session be
+# garbage-collected, and warn, before this cleanup closes it.
+_TRACKED_SESSIONS: list = []
+
+
+async def _close_integration_sessions() -> None:
+    """Close sessions created during the test and reset the global fallback."""
+    sessions = list(_TRACKED_SESSIONS)
+    _TRACKED_SESSIONS.clear()
+    for session in sessions:
+        try:
+            if not session.closed:
+                await session.close()
+        except Exception:
+            pass
     try:
-        # Close the shared session stored in the dataset store if present
-        from custom_components.bgl_ts_sbg_laketemp.dataset_coordinators import _close_shared_session_on_stop
-        import asyncio as _asyncio
-        _asyncio.run(_close_shared_session_on_stop({}))
+        from custom_components.bgl_ts_sbg_laketemp.dataset_coordinators import (
+            _close_shared_session_on_stop,
+        )
+
+        await _close_shared_session_on_stop({})
     except Exception:
         pass
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_aiohttp_sessions(monkeypatch):  # type: ignore[no-untyped-def]
+    """Track sessions created during this test and close them afterwards.
+
+    Async tests are cleaned up inside their own event loop by
+    ``_run_coroutine`` (so connectors close on the loop that created them);
+    this teardown covers sync tests and anything left over.
+    """
+    import aiohttp
+
+    original_init = aiohttp.ClientSession.__init__
+
+    def _tracking_init(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        original_init(self, *args, **kwargs)
+        _TRACKED_SESSIONS.append(self)
+
+    monkeypatch.setattr(aiohttp.ClientSession, "__init__", _tracking_init)
+    yield
+    if any(not s.closed for s in list(_TRACKED_SESSIONS)):
+        try:
+            asyncio.run(_close_integration_sessions())
+        except Exception:
+            pass
+    _TRACKED_SESSIONS.clear()
 
 
 # ---- aioresponses <-> aiohttp >= 3.12 compatibility shim (test-only) ----
