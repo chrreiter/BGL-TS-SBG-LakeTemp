@@ -8,7 +8,7 @@ Guidance for Claude Code when working in this repository. Keep it accurate; upda
 
 - Domain: `bgl_ts_sbg_laketemp`
 - Config: **YAML only** under `bgl_ts_sbg_laketemp:` in `configuration.yaml` (no config flow / UI setup yet — that's on the roadmap).
-- `iot_class`: `cloud_polling`. Runtime deps (see `manifest.json`): `beautifulsoup4==4.12.3`, `aiohttp>=3.9.1`.
+- `iot_class`: `cloud_polling`. Runtime deps (see `manifest.json`): `beautifulsoup4>=4.15.0`, `aiohttp>=3.9.1`. Runtime requirements use minimum versions (`>=`), not exact pins, so they never fight Home Assistant core or other integrations over a shared package (e.g. HA's `scrape` pins its own bs4); exact pins live only in `requirements-dev.txt`.
 - The old `laketemp_monitor` cursorrules file is **historical** — the domain, module layout, and data-source design have all moved on. Trust this file and the code, not the cursorrules.
 
 ## Layout

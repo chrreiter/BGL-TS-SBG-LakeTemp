@@ -133,7 +133,7 @@ Recommended local workflow (PowerShell on Windows):
 Home Assistant does **not** need to be installed: `tests/conftest.py` stubs the small HA surface the integration uses.
 
 Notes
-- Versions in `requirements-dev.txt` are pinned for repeatable test runs and kept current by Dependabot. `aioresponses` (the HTTP mock used by the offline tests) is not compatible with `aiohttp >= 3.12` on its own (it raises `ClientResponse.__init__() missing ... 'stream_writer'`); `tests/conftest.py` contains a small shim that works around this. This is a test-tooling concern only; the runtime requirement in `manifest.json` stays `aiohttp>=3.9.1` because Home Assistant supplies aiohttp at runtime.
+- Versions in `requirements-dev.txt` are pinned for repeatable test runs and kept current by Dependabot. `aioresponses` (the HTTP mock used by the offline tests) is not compatible with `aiohttp >= 3.12` on its own (it raises `ClientResponse.__init__() missing ... 'stream_writer'`); `tests/conftest.py` contains a small shim that works around this. This is a test-tooling concern only; the runtime requirement in `manifest.json` stays `aiohttp>=3.9.1` because Home Assistant supplies aiohttp at runtime. Runtime requirements in `manifest.json` use minimum versions (`beautifulsoup4>=4.15.0`) rather than exact pins, so they never conflict with Home Assistant core or other integrations that need the same package.
 - If you see async/sockets or Home Assistant plugin related issues, run with a clean plugin set:
   - `$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = '1'` then `pytest -q`
 - If you see a ZoneInfo error for `Europe/Berlin`, ensure `tzdata` is installed in your venv (included in `requirements-dev.txt`)
