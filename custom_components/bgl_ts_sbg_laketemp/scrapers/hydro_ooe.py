@@ -390,7 +390,7 @@ class HydroOOEScraper(AsyncSessionMixin):
                 operation="http_get",
                 url=url,
             ) as op:
-                async with session.get(url) as resp:
+                async with session.get(url, headers=self._request_headers) as resp:
                     try:
                         resp.raise_for_status()
                     except ClientResponseError as exc:

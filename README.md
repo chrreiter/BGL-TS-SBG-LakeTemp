@@ -58,6 +58,8 @@ The integration creates one sensor per configured lake. Shared datasets (Hydro O
   - scan_interval: Polling interval in seconds. Default 1800. Allowed 15–86400
   - timeout_hours: Max age of the latest reading before state becomes `unknown`. Default 24. Allowed 1–336
   - user_agent: HTTP User‑Agent string. Default `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36`
+    - `gkd_bayern`: honoured per lake (sent with each request, even though all lakes share one HTTP session)
+    - `hydro_ooe` / `salzburg_ogd`: one download serves all lakes of the dataset, so the `user_agent` of the **first** configured lake of that source is used; a different `user_agent` on a later lake is ignored and logged as a warning
   - source: Data source config. Default `{ type: gkd_bayern, options: {} }`
 
 - source.type values
