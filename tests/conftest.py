@@ -167,6 +167,10 @@ if "homeassistant" not in sys.modules:
         def available(self):  # noqa: D401 - test stub
             return bool(getattr(self.coordinator, "last_update_success", False))
 
+        async def async_added_to_hass(self):  # noqa: D401 - test stub
+            """Real HA registers the coordinator listener here; nothing to do in tests."""
+            return None
+
         # Allow generic subscripting syntax used by integration (CoordinatorEntity[...])
         @classmethod
         def __class_getitem__(cls, item):  # type: ignore[no-untyped-def]
