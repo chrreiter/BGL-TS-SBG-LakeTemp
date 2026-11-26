@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Constants and configuration schema for the BGL-TS-SBG-LakeTemp integration."""
 
-from typing import Any, Dict, Final, Literal, MutableMapping, TypedDict
+from typing import Any, Dict, Final, MutableMapping
 from dataclasses import dataclass
 from enum import Enum
 import re

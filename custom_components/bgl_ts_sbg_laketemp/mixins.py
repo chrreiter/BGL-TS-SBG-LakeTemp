@@ -29,7 +29,7 @@ The mixin never closes an external session. It only closes an internally
 created session on :meth:`close` or when exiting the async context manager.
 """
 
-from typing import Mapping, MutableMapping, Optional
+from typing import Mapping, Optional
 import logging
 
 import aiohttp
