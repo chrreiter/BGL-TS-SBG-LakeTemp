@@ -185,26 +185,6 @@ def get_domain_rate_limiter(
     return limiter
 
 
-# Global fallback limiter for scrapers outside HA context
-_GLOBAL_LIMITER: DomainRateLimiter | None = None
-
-
-def get_global_domain_rate_limiter(
-    *,
-    max_concurrent: int | None = None,
-    min_delay_seconds: float | None = None,
-    jitter_seconds: float | None = None,
-) -> DomainRateLimiter:
-    global _GLOBAL_LIMITER
-    if _GLOBAL_LIMITER is None:
-        _GLOBAL_LIMITER = DomainRateLimiter(
-            max_concurrent=max_concurrent or 2,
-            min_delay_seconds=min_delay_seconds or 0.25,
-            jitter_seconds=jitter_seconds or 0.0,
-        )
-    return _GLOBAL_LIMITER
-
-
 # ---- Shared aiohttp session for per-lake sensors ----
 
 _GLOBAL_SHARED_SESSION: aiohttp.ClientSession | None = None
@@ -248,7 +228,6 @@ def get_shared_client_session(
     headers = {"User-Agent": user_agent or DEFAULT_USER_AGENT}
     session = aiohttp.ClientSession(headers=headers, timeout=timeout)
     store["_shared_session"] = session  # type: ignore[index]
-    store["_shared_session_ua"] = headers["User-Agent"]  # type: ignore[index]
     # Save in global fallback so tests/contexts without consistent hass can close it
     global _GLOBAL_SHARED_SESSION
     _GLOBAL_SHARED_SESSION = session
@@ -471,37 +450,6 @@ class BaseDatasetCoordinator(abc.ABC):
     @abc.abstractmethod
     async def async_update_data(self) -> Dict[str, TemperatureReading]:
         """Fetch the full dataset and return mapping of lookup_key -> reading."""
-
-
-def get_or_create_salzburg_coordinator(
-    hass: HomeAssistant, lake_config: LakeConfig
-) -> SalzburgOGDDatasetCoordinator:
-    """Return a shared Salzburg OGD dataset coordinator for all lakes.
-
-    The dataset id is a fixed string to group all Salzburg OGD lakes together.
-    """
-
-    manager = get_or_create_dataset_manager(
-        hass,
-        dataset_id="salzburg_ogd_seen",
-        factory=lambda h, did: SalzburgOGDDatasetCoordinator(h, did),
-    )
-    assert isinstance(manager, SalzburgOGDDatasetCoordinator)
-    return manager
-
-
-def get_or_create_hydro_ooe_coordinator(
-    hass: HomeAssistant, lake_config: LakeConfig
-) -> HydroOoeDatasetCoordinator:
-    """Return the single Hydro OOE dataset coordinator shared by all lakes."""
-
-    manager = get_or_create_dataset_manager(
-        hass,
-        dataset_id=HydroOoeDatasetCoordinator.DATASET_ID,  # type: ignore[attr-defined]
-        factory=lambda h, did: HydroOoeDatasetCoordinator(h),
-    )
-    assert isinstance(manager, HydroOoeDatasetCoordinator)
-    return manager
 
 
 class SalzburgOGDDatasetCoordinator(BaseDatasetCoordinator):
@@ -977,8 +925,6 @@ __all__ = [
     "get_domain_rate_limiter",
     "get_dataset_manager",
     "get_or_create_dataset_manager",
-    "get_or_create_salzburg_coordinator",
-    "get_or_create_hydro_ooe_coordinator",
     "SalzburgOGDDatasetCoordinator",
     "HydroOoeDatasetCoordinator",
     "DATASETS_KEY",
