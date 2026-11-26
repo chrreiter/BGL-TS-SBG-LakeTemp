@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Test/dev dependencies (requirements-dev.txt). Runtime deps live in
+  # custom_components/bgl_ts_sbg_laketemp/manifest.json, which Dependabot
+  # does not manage; Home Assistant supplies aiohttp at runtime.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps-dev)"
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns: ["*"]
