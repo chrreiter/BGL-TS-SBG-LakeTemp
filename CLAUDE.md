@@ -60,6 +60,7 @@ RUN_ONLINE=1 python -m pytest -q -m online   # opt-in real-HTTP tests
 - Test env deps are pinned in **`requirements-dev.txt`** — install with `pip install -r requirements-dev.txt`.
 - Offline test files end in `*_offline.py`; online ones in `*_online.py` (skipped unless `RUN_ONLINE=1`).
 - `pytest.ini` disables sockets (`-p no:socket`) and the HA custom-component plugin.
+- An autouse fixture in `conftest.py` closes every `aiohttp.ClientSession` created during a test (the stub `hass` has no stop event, so the integration's shutdown hooks never fire). Check for leaks with `python -X dev -m pytest -q -W error::ResourceWarning` — it should report no `Unclosed client session` warnings.
 
 ### ⚠️ Dependency gotcha (important)
 `aioresponses` (0.7.9, the latest) is **incompatible with aiohttp ≥ 3.12** out of the box — it builds `ClientResponse` without the now-mandatory `stream_writer` argument (`TypeError: ClientResponse.__init__() missing ... 'stream_writer'`). This is a **test-tooling** issue, not a bug in this repo.
