@@ -1,4 +1,6 @@
 # BGL-TS-SBG-LakeTemp
+<img src="custom_components/bgl_ts_sbg_laketemp/brand/icon.png" alt="BGL-TS-SBG-LakeTemp logo" width="96" align="right">
+
 Monitor water temperatures of lakes in Berchtesgadener Land, Traunstein and the Salzkammergut in Home Assistant.
 
 ### Quick start (Home Assistant setup)

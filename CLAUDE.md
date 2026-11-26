@@ -22,6 +22,7 @@ custom_components/bgl_ts_sbg_laketemp/
 ├── dataset_coordinators.py # Shared-dataset coordinators, DomainRateLimiter, shared session helpers
 ├── mixins.py               # AsyncSessionMixin (aiohttp session lifecycle)
 ├── logging_utils.py        # kv() + log_operation() structured logging helpers
+├── brand/                  # icon/logo PNGs (+ dark_ variants) shown by HA/HACS; shipped in-repo, not via home-assistant/brands
 └── scrapers/
     ├── gkd_bayern.py       # GKD Bayern HTML table scraper (per-lake)
     ├── hydro_ooe.py        # Hydro OÖ ZRXP bulk file (shared dataset)
